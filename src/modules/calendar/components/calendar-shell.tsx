@@ -10,6 +10,7 @@ import type { CalendarViewType } from "../entities/calendar-view";
 import type { Event } from "@prisma/client";
 
 type MemberOption = { id: string; displayName: string };
+type EventWithNoteLinks = Event & { noteLinks?: { note: { id: string; title: string | null } }[] };
 
 export function CalendarShell({
   view,
@@ -27,7 +28,7 @@ export function CalendarShell({
   from: Date;
   to: Date;
   items: CalendarItem[];
-  events: Event[];
+  events: EventWithNoteLinks[];
   members: MemberOption[];
   memberId: string;
   householdTimezone: string;

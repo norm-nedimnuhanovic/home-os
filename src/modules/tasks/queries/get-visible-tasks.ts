@@ -45,6 +45,10 @@ export async function getVisibleTasks(
         select: { leadTimeValue: true, leadTimeUnit: true },
         take: 1,
       },
+      // The reverse of Notes' own "Linked to" display — shown in the Edit
+      // task dialog (task-row-actions.tsx), same polymorphic-target
+      // convenience relation as Calendar's Event side.
+      noteLinks: { include: { note: { select: { id: true, title: true } } } },
     },
   });
 }

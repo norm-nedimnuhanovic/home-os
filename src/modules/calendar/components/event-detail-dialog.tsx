@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
+import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { EventForm } from "./event-form";
 import { deleteEvent } from "../actions/delete-event";
 import type { Event } from "@prisma/client";
+
+type EventWithNoteLinks = Event & { noteLinks?: { note: { id: string; title: string | null } }[] };
 
 export function EventDetailDialog({
   event,
@@ -16,7 +19,7 @@ export function EventDetailDialog({
   open,
   onOpenChange,
 }: {
-  event: Event;
+  event: EventWithNoteLinks;
   members: { id: string; displayName: string }[];
   isOwner: boolean;
   open: boolean;
@@ -49,6 +52,21 @@ export function EventDetailDialog({
             </p>
             {event.location && <p className="text-sm">{event.location}</p>}
             {event.description && <p className="whitespace-pre-wrap text-sm">{event.description}</p>}
+
+            {event.noteLinks && event.noteLinks.length > 0 && (
+              <div className="flex flex-col gap-1">
+                <p className="text-xs font-medium text-muted-foreground">Linked notes</p>
+                {event.noteLinks.map(({ note }) => (
+                  <Link
+                    key={note.id}
+                    href={`/notes/${note.id}`}
+                    className="text-sm text-primary underline-offset-4 hover:underline"
+                  >
+                    {note.title ?? "Untitled note"}
+                  </Link>
+                ))}
+              </div>
+            )}
 
             {isOwner && (
               <div className="flex flex-wrap gap-2 pt-2">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -11,13 +12,14 @@ import type { Task } from "@prisma/client";
 type MemberOption = { id: string; displayName: string };
 type TagOption = { id: string; name: string };
 type DueReminder = { leadTimeValue: number | null; leadTimeUnit: "minutes" | "hours" | "days" | "weeks" | null };
+type NoteLinkOption = { note: { id: string; title: string | null } };
 
 export function TaskRowActions({
   task,
   members,
   tags,
 }: {
-  task: Task & { tagIds?: string[]; dueReminder?: DueReminder | null };
+  task: Task & { tagIds?: string[]; dueReminder?: DueReminder | null; noteLinks?: NoteLinkOption[] };
   members: MemberOption[];
   tags: TagOption[];
 }) {
@@ -38,6 +40,20 @@ export function TaskRowActions({
           <DialogHeader>
             <DialogTitle>Edit task</DialogTitle>
           </DialogHeader>
+          {task.noteLinks && task.noteLinks.length > 0 && (
+            <div className="flex flex-col gap-1 rounded-md border p-2">
+              <p className="text-xs font-medium text-muted-foreground">Linked notes</p>
+              {task.noteLinks.map(({ note }) => (
+                <Link
+                  key={note.id}
+                  href={`/notes/${note.id}`}
+                  className="text-sm text-primary underline-offset-4 hover:underline"
+                >
+                  {note.title ?? "Untitled note"}
+                </Link>
+              ))}
+            </div>
+          )}
           <TaskForm task={task} members={members} tags={tags} onDone={() => setEditing(false)} />
         </DialogContent>
       </Dialog>

@@ -25,7 +25,15 @@ export async function getCalendarRange(actingMember: ActingMember, from: Date, t
   };
 
   const [events, tasks] = await Promise.all([
-    prisma.event.findMany({ where, orderBy: { startAt: "asc" } }),
+    prisma.event.findMany({
+      where,
+      orderBy: { startAt: "asc" },
+      // The reverse of Notes' own "Linked to" display (note-detail.tsx) —
+      // an event's own detail dialog can now show which notes point at it,
+      // via the polymorphic-target convenience relation NoteLink already
+      // carries (docs/orm-conventions.md §4), no new query/join needed.
+      include: { noteLinks: { include: { note: { select: { id: true, title: true } } } } },
+    }),
     getTasksDueInRange(actingMember, from, to),
   ]);
 
