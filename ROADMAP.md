@@ -625,6 +625,8 @@ because `src/components/app-shell/` is app-tier, not a module, the same
 "app → module component" exception `docs/resources.md` §2.7 already
 documents for pages.
 
+- [x] **Success feedback for Quick Capture, found missing during a design-review pass**: closing the dialog was the only signal that a create had succeeded — invisible if you weren't already looking at the relevant module's list (e.g. capturing a task from `/dashboard`). Fixed with `toast.success()` (Sonner) after each of the three forms' `onDone`. **Real gap found while fixing this**: shadcn's `Toaster` component (`src/components/ui/sonner.tsx`) was scaffolded at Phase 0 but never mounted anywhere — calling `toast()` from any component would have silently done nothing until now. Mounted once in the root `src/app/layout.tsx`. Scope deliberately narrow: every other create/edit dialog in the app (~25 other `onDone` call sites across every module) already has its result visible in the list it's opened from, and inline row/form errors elsewhere are left exactly as they were — this only adds a transient success confirmation where there was previously none.
+
 Command palette and cross-entity search ended up **unified into one UI**
 (`src/components/app-shell/command-palette.tsx`, Cmd/Ctrl+K or a nav
 button) rather than plan.md's two separately-bulleted presentations: no
