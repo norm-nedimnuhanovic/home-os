@@ -16,7 +16,7 @@ export function CalendarItemChip({
       onClick={onClick}
       style={item.color ? { backgroundColor: item.color } : undefined}
       className={cn(
-        "w-full truncate rounded px-1.5 py-0.5 text-left text-xs",
+        "w-full cursor-pointer truncate rounded px-1.5 py-0.5 text-left text-xs",
         item.color ? "text-white" : item.kind === "task" ? "bg-secondary" : "bg-primary/10",
         item.completed && "text-muted-foreground line-through",
       )}

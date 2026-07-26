@@ -24,6 +24,26 @@ const signUpSchema = z.object({
 
 export async function signUpAndCreateHousehold(formData: FormData) {
   const parsed = signUpSchema.parse(Object.fromEntries(formData));
+
+  // Supabase's own signUp() deliberately returns an ambiguous "success" for
+  // an email that already has an account — anti-enumeration protection, so
+  // it never errors here — and can silently create a second, separate
+  // auth.users row for the same email rather than reusing the existing one.
+  // A real, confirmed bug: signing up again with an already-registered
+  // email created a genuine duplicate Household + Member, both pointing at
+  // the same real person. Checking Member directly, before ever calling
+  // signUp(), is the only reliable way to catch this — prismaAuthBootstrap,
+  // not the tenant-guarded prisma, since no householdId exists yet and this
+  // must search across every household (same reasoning as requireMember()'s
+  // own supabaseUserId lookup, docs/auth.md §6).
+  const existingMember = await prismaAuthBootstrap.member.findFirst({
+    where: { email: parsed.email },
+    select: { id: true },
+  });
+  if (existingMember) {
+    return { error: "An account already exists for this email address. Try logging in instead." };
+  }
+
   const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase.auth.signUp({

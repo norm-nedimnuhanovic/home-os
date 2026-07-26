@@ -110,6 +110,7 @@ export function NoteForm({
                       <button
                         key={tag.id}
                         type="button"
+                        className="cursor-pointer"
                         onClick={() =>
                           field.onChange(selected ? value.filter((id) => id !== tag.id) : [...value, tag.id])
                         }

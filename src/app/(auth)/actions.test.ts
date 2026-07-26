@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { acceptInvite, getInviteByToken, requestPasswordReset, updatePassword } from "./actions";
+import { acceptInvite, getInviteByToken, requestPasswordReset, signUpAndCreateHousehold, updatePassword } from "./actions";
 import { prisma, prismaAuthBootstrap } from "@/lib/db";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -7,12 +7,13 @@ import { redirect } from "next/navigation";
 
 vi.mock("@/lib/db", () => ({
   prisma: { $transaction: vi.fn() },
-  prismaAuthBootstrap: { invite: { findUnique: vi.fn() } },
+  prismaAuthBootstrap: { invite: { findUnique: vi.fn() }, member: { findFirst: vi.fn() } },
 }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminSupabaseClient: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createServerSupabaseClient: vi.fn() }));
 vi.mock("@/lib/access/module-grants", () => ({ seedModuleGrantsForHousehold: vi.fn() }));
 vi.mock("@/modules/finance/actions/seed-starter-categories", () => ({ seedStarterCategories: vi.fn() }));
+vi.mock("@/lib/notifications/actions/seed-preferences", () => ({ seedNotificationPreferencesForMember: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 
 const pendingInvite = {
@@ -198,5 +199,57 @@ describe("updatePassword", () => {
 
     expect(result).toEqual({ error: "Session expired" });
     expect(redirect).not.toHaveBeenCalled();
+  });
+});
+
+describe("signUpAndCreateHousehold", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const signupFields = {
+    email: "sam@example.com",
+    password: "password123",
+    displayName: "Sam",
+    householdName: "The Rivera Household",
+    timezone: "America/New_York",
+    baseCurrency: "USD",
+  };
+
+  it("rejects an email that already has a Member anywhere, before ever calling Supabase (rejected path)", async () => {
+    vi.mocked(prismaAuthBootstrap.member.findFirst).mockResolvedValue({ id: "member_existing" } as never);
+    const signUp = vi.fn();
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({ auth: { signUp } } as never);
+
+    const result = await signUpAndCreateHousehold(buildFormData(signupFields));
+
+    expect(prismaAuthBootstrap.member.findFirst).toHaveBeenCalledWith({
+      where: { email: "sam@example.com" },
+      select: { id: true },
+    });
+    expect(result).toEqual({
+      error: "An account already exists for this email address. Try logging in instead.",
+    });
+    expect(signUp).not.toHaveBeenCalled();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("proceeds to Supabase signUp() when no existing Member has this email (happy path)", async () => {
+    vi.mocked(prismaAuthBootstrap.member.findFirst).mockResolvedValue(null);
+    const signUp = vi.fn().mockResolvedValue({ data: { user: { id: "auth_user_1" } }, error: null });
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({ auth: { signUp } } as never);
+    vi.mocked(prisma.$transaction).mockImplementation(async (cb) =>
+      cb({
+        household: { create: vi.fn().mockResolvedValue({ id: "household_1" }) },
+        member: { create: vi.fn().mockResolvedValue({ id: "member_1" }) },
+      } as never),
+    );
+
+    const result = await signUpAndCreateHousehold(buildFormData(signupFields));
+
+    expect(signUp).toHaveBeenCalledWith(
+      expect.objectContaining({ email: "sam@example.com", password: "password123" }),
+    );
+    expect(result).toEqual({ success: true, message: "Check your email to confirm your account." });
   });
 });

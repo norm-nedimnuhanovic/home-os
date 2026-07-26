@@ -51,7 +51,7 @@ export function SplitEditor({
         {members.map((member) => {
           const selected = !!shareFor(member.id);
           return (
-            <button key={member.id} type="button" onClick={() => toggleMember(member.id)}>
+            <button key={member.id} type="button" className="cursor-pointer" onClick={() => toggleMember(member.id)}>
               <Badge variant={selected ? "default" : "outline"}>{member.displayName}</Badge>
             </button>
           );

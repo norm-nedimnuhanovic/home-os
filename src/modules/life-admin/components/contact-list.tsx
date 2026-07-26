@@ -35,7 +35,7 @@ export function ContactList({ contacts, members }: { contacts: Contact[]; member
         {group.map((contact) => (
           <div key={contact.id} className="flex flex-col gap-2 rounded-lg border p-3">
             <div className="flex items-start justify-between gap-2">
-              <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setEditing(contact)}>
+              <button type="button" className="min-w-0 flex-1 cursor-pointer text-left" onClick={() => setEditing(contact)}>
                 <p className="truncate font-medium">{contact.name}</p>
                 <p className="truncate text-xs text-muted-foreground">{contact.category.replace(/_/g, " ")}</p>
               </button>

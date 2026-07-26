@@ -42,7 +42,7 @@ export function QuickCaptureButton({
             <button
               key={target.moduleKey}
               type="button"
-              className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-muted"
+              className="w-full cursor-pointer rounded-sm px-2 py-1.5 text-left text-sm hover:bg-muted"
               onClick={() => {
                 setPickerOpen(false);
                 setActiveTarget(target.moduleKey);

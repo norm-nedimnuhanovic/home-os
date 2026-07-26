@@ -32,7 +32,7 @@ export function DocumentList({ documents, members }: { documents: Document[]; me
       <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {documents.map((document) => (
           <li key={document.id} className="flex flex-col gap-2 rounded-lg border p-3">
-            <button type="button" className="min-w-0 text-left" onClick={() => setPreviewing(document)}>
+            <button type="button" className="min-w-0 cursor-pointer text-left" onClick={() => setPreviewing(document)}>
               <p className="truncate font-medium">{document.title}</p>
             </button>
             <div className="flex flex-wrap gap-1">

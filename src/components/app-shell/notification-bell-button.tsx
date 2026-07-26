@@ -45,7 +45,7 @@ export function NotificationBellButton({ items }: { items: Notification[] }) {
           {unreadCount > 0 && (
             <button
               type="button"
-              className="text-xs text-muted-foreground hover:text-foreground"
+              className="cursor-pointer text-xs text-muted-foreground hover:text-foreground"
               onClick={() => run(async () => { await markAllNotificationsRead(); router.refresh(); })}
             >
               Mark all read
@@ -74,7 +74,7 @@ export function NotificationBellButton({ items }: { items: Notification[] }) {
                     })
                   }
                   className={cn(
-                    "flex w-full flex-col gap-0.5 border-b p-3 text-left text-sm last:border-b-0 hover:bg-muted",
+                    "flex w-full cursor-pointer flex-col gap-0.5 border-b p-3 text-left text-sm last:border-b-0 hover:bg-muted",
                     !item.readAt && "bg-accent/40",
                   )}
                 >

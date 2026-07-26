@@ -53,7 +53,7 @@ export default function LoginPage() {
       <button
         type="button"
         onClick={() => router.push("/signup")}
-        className="text-sm text-muted-foreground underline underline-offset-4"
+        className="cursor-pointer text-sm text-muted-foreground underline underline-offset-4"
       >
         Need a household? Create one
       </button>

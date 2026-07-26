@@ -280,6 +280,7 @@ export function TransactionForm({
                       <button
                         key={member.id}
                         type="button"
+                        className="cursor-pointer"
                         onClick={() =>
                           field.onChange(
                             selected

@@ -63,6 +63,7 @@ export function VisibilityField({ members }: { members: MemberOption[] }) {
                     <button
                       key={m.id}
                       type="button"
+                      className="cursor-pointer"
                       onClick={() =>
                         field.onChange(
                           selected

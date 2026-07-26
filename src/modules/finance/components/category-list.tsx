@@ -36,7 +36,7 @@ export function CategoryList({ categories }: { categories: Category[] }) {
       <ul className="mt-3 flex flex-wrap gap-2">
         {categories.map((category) => (
           <li key={category.id} className="flex items-center gap-1">
-            <button type="button" onClick={() => setEditing(category)}>
+            <button type="button" className="cursor-pointer" onClick={() => setEditing(category)}>
               <Badge variant="outline">{category.name}</Badge>
             </button>
             <Button
