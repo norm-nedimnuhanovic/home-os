@@ -6,6 +6,7 @@ import { Nav } from "@/components/app-shell/nav";
 import { UserMenu } from "@/components/app-shell/user-menu";
 import { QuickCapture } from "@/components/app-shell/quick-capture";
 import { CommandPalette } from "@/components/app-shell/command-palette";
+import { NotificationBell } from "@/components/app-shell/notification-bell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const member = await requireMember();
@@ -35,6 +36,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Nav />
           <div className="flex shrink-0 items-center gap-2 sm:hidden">{userFooter}</div>
         </div>
+        <NotificationBell />
         <QuickCapture />
         <CommandPalette />
         <div className="mt-auto hidden items-center justify-between gap-2 border-t border-sidebar-border pt-3 sm:flex">

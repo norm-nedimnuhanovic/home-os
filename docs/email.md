@@ -50,12 +50,18 @@ src/lib/
 │   │   ├── notification-preference.ts  # shouldEmail()/shouldCreateNotification() gates (§4)
 │   │   └── digest-subscription.ts   # nextDigestRunAt() scheduling math (§8)
 │   ├── actions/
-│   │   ├── update-preferences.ts    # updateNotificationPreferences(), updateDigestSubscription()
-│   │   └── mark-read.ts             # markNotificationRead()
+│   │   ├── update-preferences.ts    # updateNotificationPreference(), updateDigestSubscription()
+│   │   ├── mark-read.ts             # markNotificationRead()
+│   │   └── mark-all-read.ts         # markAllNotificationsRead()
 │   ├── queries/get-inbox.ts         # unread/read Notification rows for the bell feed
-│   ├── jobs/send-digests.ts         # backs /api/cron/digests-send (§8)
-│   ├── components/notification-bell.tsx
-│   └── index.ts
+│   └── jobs/send-digests.tsx        # backs /api/cron/digests-send (§8)
+# The bell UI itself lives under the app shell, not this lib folder — it's
+# a rendered component, not notification business logic:
+# src/components/app-shell/notification-bell.tsx (Server Component, fetches
+# getInbox()) + notification-bell-button.tsx (the Popover Client Component).
+# No src/lib/notifications/index.ts barrel exists — this whole tree is
+# imported by direct file path everywhere (@/lib/notifications/queries/get-inbox
+# etc.), same convention as the rest of src/lib/.
 ├── email/
 │   ├── resend-client.ts             # Resend SDK wrapper, dev-redirect handling (§7)
 │   └── templates/
@@ -375,16 +381,24 @@ export async function markNotificationRead(notificationId: string) {
 ```
 
 ```ts
-// src/lib/notifications/queries/get-inbox.ts
+// src/lib/notifications/queries/get-inbox.ts — real signature, not getUnreadNotifications():
+// returns the 50 most recent rows (read AND unread, oldest-first-dropped),
+// not an unread-only filter — the bell UI itself decides how to render
+// read vs. unread (an "unread" dot/bold + a badge count derived client-side
+// from readAt === null), rather than the query only ever returning a subset.
 import { prisma } from "@/lib/db";
+import type { ActingMember } from "@/lib/auth/session";
 
-export async function getUnreadNotifications(householdId: string, memberId: string) {
+export async function getInbox(actingMember: Pick<ActingMember, "id" | "householdId">) {
   return prisma.notification.findMany({
-    where: { householdId, memberId, readAt: null },
+    where: { householdId: actingMember.householdId, memberId: actingMember.id },
     orderBy: { createdAt: "desc" },
+    take: 50,
   });
 }
 ```
+
+`markAllNotificationsRead()` (`src/lib/notifications/actions/mark-all-read.ts`) is `markNotificationRead()`'s bulk sibling — same householdId+memberId scoping, but `updateMany({ readAt: null })` instead of a single id, for the bell's "Mark all read" button. The bell itself (`src/components/app-shell/notification-bell.tsx` + `notification-bell-button.tsx`) is the one real consumer of both `getInbox()` and these two actions — see AGENTS.md/`docs/project-structure.md` for why UI like this lives under `src/components/app-shell/`, not inside this `src/lib/` folder.
 
 ---
 
@@ -1278,6 +1292,8 @@ the code:
 | `getEffectivePreference()` default-to-true fallback | same file | seed a member with no `NotificationPreference` row, assert all three come back `true` |
 | `updateNotificationPreference()` | `src/lib/notifications/actions/update-preferences.test.ts` | happy path (own preference) + the "no id in `input`" scoping assertion |
 | `markNotificationRead()` | `src/lib/notifications/actions/mark-read.test.ts` | happy path + rejected path (another member's `notificationId` updates 0 rows, never throws information about its existence) |
+| `markAllNotificationsRead()` | `src/lib/notifications/actions/mark-all-read.test.ts` | happy path (scoped `updateMany` on `readAt: null`) + rejected path (not authenticated) |
+| `getInbox()` | `src/lib/notifications/queries/get-inbox.test.ts` | scoped by householdId AND memberId, ordered newest-first, `take: 50` |
 | `sweepDueOccurrences()` | `src/modules/reminders/jobs/sweep-due-occurrences.test.ts` | seed a past-due `pending` occurrence, assert it's `notified` + an email was attempted; seed a stale `notified` one past 24h, assert it's `missed` |
 | `sendCategoryEmail()` template selection | `src/lib/email/send-category-email.test.ts` | `sourceType: "subscription"` picks `BillDueSoonEmail`, everything else picks `ReminderFiringEmail` |
 | Resend boundary | any test that would otherwise send real email | `vi.mock("resend")` at the top of the test file — this is a network-boundary test double, not "simulating a send" in the app itself (§7) |
