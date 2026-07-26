@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { acceptInvite, getInviteByToken } from "./actions";
+import { acceptInvite, getInviteByToken, requestPasswordReset, updatePassword } from "./actions";
 import { prisma, prismaAuthBootstrap } from "@/lib/db";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 vi.mock("@/lib/db", () => ({
   prisma: { $transaction: vi.fn() },
@@ -11,6 +13,7 @@ vi.mock("@/lib/supabase/admin", () => ({ createAdminSupabaseClient: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createServerSupabaseClient: vi.fn() }));
 vi.mock("@/lib/access/module-grants", () => ({ seedModuleGrantsForHousehold: vi.fn() }));
 vi.mock("@/modules/finance/actions/seed-starter-categories", () => ({ seedStarterCategories: vi.fn() }));
+vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 
 const pendingInvite = {
   id: "invite_1",
@@ -135,5 +138,65 @@ describe("acceptInvite", () => {
       error: "An account already exists for this email address. Multi-household accounts aren't supported yet.",
     });
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+});
+
+describe("requestPasswordReset", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("always returns the same message, whether or not the email has an account (happy path)", async () => {
+    const resetPasswordForEmail = vi.fn().mockResolvedValue({ data: {}, error: null });
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({
+      auth: { resetPasswordForEmail },
+    } as never);
+
+    const result = await requestPasswordReset(buildFormData({ email: "someone@example.com" }));
+
+    expect(result).toEqual({
+      success: true,
+      message: "If that email has an account, a reset link is on its way.",
+    });
+    expect(resetPasswordForEmail).toHaveBeenCalledWith(
+      "someone@example.com",
+      expect.objectContaining({ redirectTo: expect.stringContaining("/reset-password/update") }),
+    );
+  });
+
+  it("rejects a malformed email before ever calling Supabase (rejected path)", async () => {
+    const resetPasswordForEmail = vi.fn();
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({
+      auth: { resetPasswordForEmail },
+    } as never);
+
+    await expect(requestPasswordReset(buildFormData({ email: "not-an-email" }))).rejects.toThrow();
+    expect(resetPasswordForEmail).not.toHaveBeenCalled();
+  });
+});
+
+describe("updatePassword", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("updates the password and redirects to the dashboard (happy path)", async () => {
+    const updateUser = vi.fn().mockResolvedValue({ error: null });
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({ auth: { updateUser } } as never);
+
+    await updatePassword(buildFormData({ password: "newpassword123" }));
+
+    expect(updateUser).toHaveBeenCalledWith({ password: "newpassword123" });
+    expect(redirect).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("returns Supabase's own error instead of redirecting when the update fails (rejected path)", async () => {
+    const updateUser = vi.fn().mockResolvedValue({ error: { message: "Session expired" } });
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({ auth: { updateUser } } as never);
+
+    const result = await updatePassword(buildFormData({ password: "newpassword123" }));
+
+    expect(result).toEqual({ error: "Session expired" });
+    expect(redirect).not.toHaveBeenCalled();
   });
 });

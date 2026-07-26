@@ -9,27 +9,35 @@ import type { NoteLinkedEntityType } from "@prisma/client";
 
 type LinkableOption = { id: string; label: string };
 
+const LINKED_ENTITY_MODULE: Record<NoteLinkedEntityType, string> = {
+  task: "tasks",
+  event: "calendar",
+  subscription: "finance",
+};
+
 export function NoteLinkDialog({
   noteId,
   tasks,
   events,
+  subscriptions,
 }: {
   noteId: string;
   tasks: LinkableOption[];
   events: LinkableOption[];
+  subscriptions: LinkableOption[];
 }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<NoteLinkedEntityType>("task");
   const [entityId, setEntityId] = useState<string | undefined>(undefined);
   const [isPending, startTransition] = useTransition();
 
-  const options = type === "task" ? tasks : events;
+  const options = type === "task" ? tasks : type === "event" ? events : subscriptions;
 
   function handleLink() {
     if (!entityId) return;
     startTransition(async () => {
       await linkNote(noteId, {
-        linkedEntityModule: type === "task" ? "tasks" : "calendar",
+        linkedEntityModule: LINKED_ENTITY_MODULE[type],
         linkedEntityType: type,
         linkedEntityId: entityId,
       });
@@ -63,6 +71,7 @@ export function NoteLinkDialog({
             <SelectContent>
               <SelectItem value="task">Task</SelectItem>
               <SelectItem value="event">Event</SelectItem>
+              <SelectItem value="subscription">Subscription</SelectItem>
             </SelectContent>
           </Select>
 

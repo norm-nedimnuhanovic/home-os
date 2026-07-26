@@ -3,6 +3,7 @@ import { addDays, subDays } from "date-fns";
 import { getNote } from "@/modules/notes";
 import { getCalendarRange } from "@/modules/calendar";
 import { getVisibleTasks } from "@/modules/tasks";
+import { getSubscriptions } from "@/modules/finance";
 import { getMembers } from "@/lib/household";
 import { getHouseholdTags } from "@/modules/tasks";
 import { requireMember } from "@/lib/auth/session";
@@ -20,11 +21,12 @@ export default async function NoteDetailPage({ params }: { params: Promise<{ not
   });
   if (!note) notFound();
 
-  const [members, tags, tasks, { events }] = await Promise.all([
+  const [members, tags, tasks, { events }, subscriptions] = await Promise.all([
     getMembers(member.householdId),
     getHouseholdTags(member.householdId),
     getVisibleTasks(member),
     getCalendarRange(member, subDays(new Date(), 30), addDays(new Date(), 90)),
+    getSubscriptions(member.householdId),
   ]);
 
   return (
@@ -35,6 +37,7 @@ export default async function NoteDetailPage({ params }: { params: Promise<{ not
       currentMemberId={member.id}
       linkableTasks={tasks.map((t) => ({ id: t.id, label: t.title }))}
       linkableEvents={events.map((e) => ({ id: e.id, label: e.title }))}
+      linkableSubscriptions={subscriptions.map((s) => ({ id: s.id, label: s.name }))}
     />
   );
 }

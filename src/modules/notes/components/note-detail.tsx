@@ -26,6 +26,7 @@ export function NoteDetail({
   currentMemberId,
   linkableTasks,
   linkableEvents,
+  linkableSubscriptions,
 }: {
   note: NoteWithRelations;
   members: { id: string; displayName: string }[];
@@ -33,6 +34,7 @@ export function NoteDetail({
   currentMemberId: string;
   linkableTasks: { id: string; label: string }[];
   linkableEvents: { id: string; label: string }[];
+  linkableSubscriptions: { id: string; label: string }[];
 }) {
   const [editing, setEditing] = useState(false);
   const { isPending, run } = useActionFeedback();
@@ -41,6 +43,7 @@ export function NoteDetail({
 
   const taskLabels = new Map(linkableTasks.map((t) => [t.id, t.label]));
   const eventLabels = new Map(linkableEvents.map((e) => [e.id, e.label]));
+  const subscriptionLabels = new Map(linkableSubscriptions.map((s) => [s.id, s.label]));
 
   function resolveLinkLabel(link: NoteLink): string {
     const label =
@@ -48,7 +51,9 @@ export function NoteDetail({
         ? taskLabels.get(link.linkedEntityId)
         : link.linkedEntityType === "event"
           ? eventLabels.get(link.linkedEntityId)
-          : undefined;
+          : link.linkedEntityType === "subscription"
+            ? subscriptionLabels.get(link.linkedEntityId)
+            : undefined;
     const typeLabel = link.linkedEntityType[0].toUpperCase() + link.linkedEntityType.slice(1);
     // Graceful degradation (plan.md §4.5's pattern, applied here too): the
     // linked object may no longer resolve (deleted, or just out of the
@@ -108,7 +113,14 @@ export function NoteDetail({
       <div className="flex flex-col gap-2 border-t pt-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-sm font-medium">Linked to</h2>
-          {isAuthor && <NoteLinkDialog noteId={note.id} tasks={linkableTasks} events={linkableEvents} />}
+          {isAuthor && (
+            <NoteLinkDialog
+              noteId={note.id}
+              tasks={linkableTasks}
+              events={linkableEvents}
+              subscriptions={linkableSubscriptions}
+            />
+          )}
         </div>
         {note.links.length === 0 && <p className="text-sm text-muted-foreground">Nothing linked yet.</p>}
         <ul className="flex flex-col gap-1">

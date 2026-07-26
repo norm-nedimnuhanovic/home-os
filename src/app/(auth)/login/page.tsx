@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +34,12 @@ export default function LoginPage() {
           <Input id="email" name="email" type="email" required />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="password">Password</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Password</Label>
+            <Link href="/reset-password/request" className="text-sm text-muted-foreground underline underline-offset-4">
+              Forgot password?
+            </Link>
+          </div>
           <Input id="password" name="password" type="password" required />
         </div>
 

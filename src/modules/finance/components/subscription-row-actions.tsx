@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -14,6 +15,7 @@ import type { Subscription } from "@prisma/client";
 
 type MemberOption = { id: string; displayName: string };
 type CategoryOption = { id: string; name: string };
+type NoteLinkOption = { note: { id: string; title: string | null } };
 
 export function SubscriptionRowActions({
   subscription,
@@ -21,7 +23,7 @@ export function SubscriptionRowActions({
   categories,
   actingMemberId,
 }: {
-  subscription: Subscription;
+  subscription: Subscription & { noteLinks?: NoteLinkOption[] };
   members: MemberOption[];
   categories: CategoryOption[];
   actingMemberId: string;
@@ -76,6 +78,20 @@ export function SubscriptionRowActions({
           <DialogHeader>
             <DialogTitle>Edit subscription</DialogTitle>
           </DialogHeader>
+          {subscription.noteLinks && subscription.noteLinks.length > 0 && (
+            <div className="flex flex-col gap-1 rounded-md border p-2">
+              <p className="text-xs font-medium text-muted-foreground">Linked notes</p>
+              {subscription.noteLinks.map(({ note }) => (
+                <Link
+                  key={note.id}
+                  href={`/notes/${note.id}`}
+                  className="text-sm text-primary underline-offset-4 hover:underline"
+                >
+                  {note.title ?? "Untitled note"}
+                </Link>
+              ))}
+            </div>
+          )}
           <SubscriptionForm
             subscription={subscription}
             members={members}
