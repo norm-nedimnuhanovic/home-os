@@ -21,6 +21,61 @@ const NOTIFICATION_BACKED_RECIPIENTS: Record<
   "household.invite_received": (payload) => (payload.invitedMemberId as string | undefined) ?? null,
 };
 
+type NotificationDetail = {
+  title: string;
+  body: string | null;
+  sourceEntityType: string | null;
+  sourceEntityId: string | null;
+};
+
+// The Notification row's title/body defaulted to the event type's own
+// generic label with nothing else — "Task assigned" with no indication of
+// *which* task or who assigned it. `Notification.sourceEntityType`/
+// `sourceEntityId`/`body` already existed in the schema for exactly this,
+// just never populated. One lookup per category, falling back to the
+// generic label if the source row can't be resolved (deleted since, a
+// stale/malformed payload, etc.) rather than erroring the whole fan-out.
+async function buildNotificationDetail(
+  occurrence: Occurrence,
+  payload: Record<string, unknown>,
+): Promise<NotificationDetail> {
+  const generic = { title: occurrence.eventType.label, body: null, sourceEntityType: null, sourceEntityId: null };
+
+  if (occurrence.eventType.key === "task.assigned") {
+    const taskId = payload.taskId as string | undefined;
+    if (!taskId) return generic;
+    const [task, assigner] = await Promise.all([
+      prisma.task.findUnique({ where: { id: taskId }, select: { title: true } }),
+      occurrence.triggeredByMemberId
+        ? prisma.member.findUnique({ where: { id: occurrence.triggeredByMemberId }, select: { displayName: true } })
+        : null,
+    ]);
+    return {
+      title: occurrence.eventType.label,
+      body: task ? `${assigner ? `${assigner.displayName} assigned` : "Assigned"} you "${task.title}"` : null,
+      sourceEntityType: "Task",
+      sourceEntityId: taskId,
+    };
+  }
+
+  if (occurrence.eventType.key === "share.received") {
+    const objectType = payload.objectType as string | undefined;
+    const objectId = payload.objectId as string | undefined;
+    const sharedByMemberId = payload.sharedByMemberId as string | undefined;
+    const sharer = sharedByMemberId
+      ? await prisma.member.findUnique({ where: { id: sharedByMemberId }, select: { displayName: true } })
+      : null;
+    return {
+      title: occurrence.eventType.label,
+      body: sharer && objectType ? `${sharer.displayName} shared a ${objectType} with you` : null,
+      sourceEntityType: objectType ?? null,
+      sourceEntityId: objectId ?? null,
+    };
+  }
+
+  return generic;
+}
+
 /**
  * Baseline platform behavior — every EventOccurrence gets the
  * Notification/email fan-out for its categoryKey for free, gated only by
@@ -43,14 +98,18 @@ export async function fanOutNotificationsForOccurrence(occurrence: Occurrence) {
   const preference = await getEffectivePreference(occurrence.householdId, recipientMemberId, occurrence.eventType.key);
 
   if (preference.inAppEnabled) {
+    const detail = await buildNotificationDetail(occurrence, payload);
     await prisma.notification.create({
       data: {
         householdId: occurrence.householdId,
         memberId: recipientMemberId,
         categoryKey: occurrence.eventType.key,
         sourceModule: occurrence.eventType.key.split(".")[0],
+        sourceEntityType: detail.sourceEntityType,
+        sourceEntityId: detail.sourceEntityId,
         eventOccurrenceId: occurrence.id,
-        title: occurrence.eventType.label,
+        title: detail.title,
+        body: detail.body,
       },
     });
   }

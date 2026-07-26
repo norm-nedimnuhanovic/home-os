@@ -5,7 +5,11 @@ import { getEffectivePreference } from "./entities/notification-preference";
 import { sendCategoryEmail } from "@/lib/email/send-category-email";
 
 vi.mock("@/lib/db", () => ({
-  prisma: { notification: { create: vi.fn() } },
+  prisma: {
+    notification: { create: vi.fn() },
+    task: { findUnique: vi.fn() },
+    member: { findUnique: vi.fn() },
+  },
 }));
 vi.mock("./entities/notification-preference", () => ({
   getEffectivePreference: vi.fn(),
@@ -17,7 +21,7 @@ function seedOccurrence(overrides: Record<string, unknown> = {}) {
     id: "occurrence_1",
     householdId: "household_1",
     triggeredByMemberId: "member_1",
-    payloadSnapshot: { assigneeId: "member_2" },
+    payloadSnapshot: { taskId: "task_1", assigneeId: "member_2" },
     eventType: { key: "task.assigned", label: "Task assigned" },
     ...overrides,
   } as never;
@@ -28,12 +32,14 @@ describe("fanOutNotificationsForOccurrence", () => {
     vi.clearAllMocks();
   });
 
-  it("creates a Notification for a Notification-backed category when inAppEnabled (happy path)", async () => {
+  it("builds a specific title/body/source from the task and assigner (happy path)", async () => {
     vi.mocked(getEffectivePreference).mockResolvedValue({
       emailEnabled: true,
       inAppEnabled: true,
       digestEnabled: true,
     });
+    vi.mocked(prisma.task.findUnique).mockResolvedValue({ title: "Water the plants" } as never);
+    vi.mocked(prisma.member.findUnique).mockResolvedValue({ displayName: "Priya" } as never);
 
     await fanOutNotificationsForOccurrence(seedOccurrence());
 
@@ -44,15 +50,68 @@ describe("fanOutNotificationsForOccurrence", () => {
         memberId: "member_2",
         categoryKey: "task.assigned",
         sourceModule: "task",
+        sourceEntityType: "Task",
+        sourceEntityId: "task_1",
         eventOccurrenceId: "occurrence_1",
         title: "Task assigned",
+        body: 'Priya assigned you "Water the plants"',
       },
     });
     expect(sendCategoryEmail).toHaveBeenCalledWith(
-      { assigneeId: "member_2", triggeredByMemberId: "member_1" },
+      { taskId: "task_1", assigneeId: "member_2", triggeredByMemberId: "member_1" },
       "member_2",
       "task.assigned",
     );
+  });
+
+  it("builds a share.received detail from the sharer and objectType", async () => {
+    vi.mocked(getEffectivePreference).mockResolvedValue({
+      emailEnabled: false,
+      inAppEnabled: true,
+      digestEnabled: true,
+    });
+    vi.mocked(prisma.member.findUnique).mockResolvedValue({ displayName: "Sam" } as never);
+
+    await fanOutNotificationsForOccurrence(
+      seedOccurrence({
+        payloadSnapshot: {
+          objectType: "Note",
+          objectId: "note_1",
+          sharedByMemberId: "member_3",
+          sharedWithMemberId: "member_2",
+        },
+        eventType: { key: "share.received", label: "Item shared with you" },
+      }),
+    );
+
+    expect(prisma.member.findUnique).toHaveBeenCalledWith({
+      where: { id: "member_3" },
+      select: { displayName: true },
+    });
+    expect(prisma.notification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        sourceEntityType: "Note",
+        sourceEntityId: "note_1",
+        title: "Item shared with you",
+        body: "Sam shared a Note with you",
+      }),
+    });
+  });
+
+  it("falls back to the generic label when the source task no longer resolves", async () => {
+    vi.mocked(getEffectivePreference).mockResolvedValue({
+      emailEnabled: false,
+      inAppEnabled: true,
+      digestEnabled: true,
+    });
+    vi.mocked(prisma.task.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.member.findUnique).mockResolvedValue(null);
+
+    await fanOutNotificationsForOccurrence(seedOccurrence());
+
+    expect(prisma.notification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ title: "Task assigned", body: null, sourceEntityType: "Task", sourceEntityId: "task_1" }),
+    });
   });
 
   it("skips creating a Notification when inAppEnabled is false (rejected/gated path)", async () => {
@@ -74,6 +133,8 @@ describe("fanOutNotificationsForOccurrence", () => {
       inAppEnabled: true,
       digestEnabled: true,
     });
+    vi.mocked(prisma.task.findUnique).mockResolvedValue({ title: "Water the plants" } as never);
+    vi.mocked(prisma.member.findUnique).mockResolvedValue({ displayName: "Priya" } as never);
 
     await fanOutNotificationsForOccurrence(seedOccurrence());
 
@@ -97,6 +158,8 @@ describe("fanOutNotificationsForOccurrence", () => {
       inAppEnabled: true,
       digestEnabled: true,
     });
+    vi.mocked(prisma.task.findUnique).mockResolvedValue({ title: "Water the plants" } as never);
+    vi.mocked(prisma.member.findUnique).mockResolvedValue({ displayName: "Priya" } as never);
     vi.mocked(sendCategoryEmail).mockRejectedValue(new Error("Resend is down"));
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 

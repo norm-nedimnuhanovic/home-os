@@ -12,6 +12,14 @@ import { markAllNotificationsRead } from "@/lib/notifications/actions/mark-all-r
 import { cn } from "@/lib/utils";
 import type { Notification } from "@prisma/client";
 
+// Tasks has no per-item detail route (a shared list + inline edit dialog,
+// docs/project-structure.md) — this only ever gets a member to the right
+// *list*, never the exact row. Categories with no entry here (e.g.
+// share.received's objectType can be almost anything) just don't navigate.
+const SOURCE_ENTITY_HREF: Record<string, string> = {
+  Task: "/tasks",
+};
+
 export function NotificationBellButton({ items }: { items: Notification[] }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -48,27 +56,39 @@ export function NotificationBellButton({ items }: { items: Notification[] }) {
           {items.length === 0 ? (
             <p className="p-4 text-center text-sm text-muted-foreground">No notifications yet.</p>
           ) : (
-            items.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() =>
-                  !item.readAt && run(async () => { await markNotificationRead(item.id); router.refresh(); })
-                }
-                className={cn(
-                  "flex w-full flex-col gap-0.5 border-b p-3 text-left text-sm last:border-b-0 hover:bg-muted",
-                  !item.readAt && "bg-accent/40",
-                )}
-              >
-                <span className="flex items-center gap-2">
-                  {!item.readAt && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
-                  <span className={cn("truncate", !item.readAt && "font-medium")}>{item.title}</span>
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(item.createdAt, { addSuffix: true })}
-                </span>
-              </button>
-            ))
+            items.map((item) => {
+              const href = item.sourceEntityType ? SOURCE_ENTITY_HREF[item.sourceEntityType] : undefined;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() =>
+                    run(async () => {
+                      if (!item.readAt) await markNotificationRead(item.id);
+                      if (href) {
+                        setOpen(false);
+                        router.push(href);
+                      } else {
+                        router.refresh();
+                      }
+                    })
+                  }
+                  className={cn(
+                    "flex w-full flex-col gap-0.5 border-b p-3 text-left text-sm last:border-b-0 hover:bg-muted",
+                    !item.readAt && "bg-accent/40",
+                  )}
+                >
+                  <span className="flex items-center gap-2">
+                    {!item.readAt && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
+                    <span className={cn("truncate", !item.readAt && "font-medium")}>{item.title}</span>
+                  </span>
+                  {item.body && <span className="truncate text-xs text-foreground/80">{item.body}</span>}
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(item.createdAt, { addSuffix: true })}
+                  </span>
+                </button>
+              );
+            })
           )}
         </div>
       </PopoverContent>

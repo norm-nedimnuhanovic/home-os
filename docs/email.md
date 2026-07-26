@@ -400,6 +400,8 @@ export async function getInbox(actingMember: Pick<ActingMember, "id" | "househol
 
 `markAllNotificationsRead()` (`src/lib/notifications/actions/mark-all-read.ts`) is `markNotificationRead()`'s bulk sibling — same householdId+memberId scoping, but `updateMany({ readAt: null })` instead of a single id, for the bell's "Mark all read" button. The bell itself (`src/components/app-shell/notification-bell.tsx` + `notification-bell-button.tsx`) is the one real consumer of both `getInbox()` and these two actions — see AGENTS.md/`docs/project-structure.md` for why UI like this lives under `src/components/app-shell/`, not inside this `src/lib/` folder.
 
+`fanOutNotificationsForOccurrence()`'s `Notification.create()` doesn't just stamp the event type's own generic `label` into `title` and leave `body`/`sourceEntityType`/`sourceEntityId` null — a per-category `buildNotificationDetail()` (same file) does one extra lookup to make the row actually useful: `task.assigned` fetches the `Task.title` and the assigner's `Member.displayName` to build `body: '{assigner} assigned you "{task title}"'`; `share.received` fetches the sharer's name for `body: '{sharer} shared a {objectType} with you'`. Both set `sourceEntityType`/`sourceEntityId` from the payload either way (even when the body lookup comes back empty), and both fall back to the bare generic label if the source row no longer resolves — a deleted task must never throw and break the whole fan-out. `household.invite_received` skips this entirely (falls straight to generic) since nothing ever actually emits it (§2.1's caveat) — there is no real occurrence to enrich.
+
 ---
 
 ## 5. `DigestSubscription`: independent of per-category prefs
