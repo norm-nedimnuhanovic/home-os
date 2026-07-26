@@ -29,5 +29,5 @@ export const permissionDeclarations = [
 ];
 
 export const surfaceRegistrations = [
-  { surface: "navigation_item" as const, label: "Calendar", target: "/calendar", sortOrder: 30 },
+  { surface: "navigation_item" as const, label: "Calendar", target: "/calendar", sortOrder: 30, icon: "Calendar" },
 ];

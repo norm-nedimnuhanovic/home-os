@@ -64,7 +64,7 @@ export const permissionDeclarations = [
 ];
 
 export const surfaceRegistrations = [
-  { surface: "navigation_item" as const, label: "Reminders", target: "/reminders", sortOrder: 40 },
+  { surface: "navigation_item" as const, label: "Reminders", target: "/reminders", sortOrder: 40, icon: "Bell" },
   { surface: "quick_capture_target" as const, label: "Add a reminder", target: "reminders/quick-capture", sortOrder: 30 },
   {
     surface: "email_notification_category" as const,

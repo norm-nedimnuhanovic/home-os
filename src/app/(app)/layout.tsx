@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen flex-col sm:flex-row">
-      <nav className="flex shrink-0 flex-col gap-3 border-b p-3 sm:w-56 sm:border-b-0 sm:border-r sm:p-4">
+      <nav className="flex shrink-0 flex-col gap-3 border-b border-sidebar-border bg-sidebar p-3 text-sidebar-foreground sm:w-56 sm:border-b-0 sm:border-r sm:p-4">
         <div className="flex flex-row items-center justify-between gap-2 sm:flex-col sm:items-stretch">
           <Nav />
           <form action={logout}>

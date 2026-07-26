@@ -52,5 +52,5 @@ export const surfaceRegistrations = [
     target: "share.received",
     sortOrder: 91,
   },
-  { surface: "navigation_item" as const, label: "Settings", target: "/settings/members", sortOrder: 100 },
+  { surface: "navigation_item" as const, label: "Settings", target: "/settings/members", sortOrder: 100, icon: "Settings" },
 ];

@@ -104,7 +104,14 @@ export async function seedPlatformCatalog() {
             target: surface.target,
           },
         },
-        update: { label: surface.label, sortOrder: surface.sortOrder, enabled: true },
+        // Spread, not named fields — a real bug fix: this previously named
+        // only label/sortOrder/enabled, so adding a new optional column
+        // (e.g. icon) to surfaceRegistrations would silently never reach an
+        // already-seeded database on re-run. Spreading picks up any future
+        // optional field automatically, in both create and update, and is
+        // safe across every surface kind sharing this loop — Prisma omits an
+        // absent key entirely rather than nulling it.
+        update: { ...surface, enabled: true },
         create: { moduleId: catalogModule.id, ...surface, enabled: true },
       });
     }

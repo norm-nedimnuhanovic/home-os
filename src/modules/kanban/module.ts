@@ -22,7 +22,7 @@ export const permissionDeclarations = [
 ];
 
 export const surfaceRegistrations = [
-  { surface: "navigation_item" as const, label: "Kanban", target: "/kanban", sortOrder: 20 },
+  { surface: "navigation_item" as const, label: "Kanban", target: "/kanban", sortOrder: 20, icon: "Kanban" },
 ];
 
 // Kanban is the one built-in that reacts to another module's event via

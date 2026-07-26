@@ -59,7 +59,7 @@ export const permissionDeclarations = [
 ];
 
 export const surfaceRegistrations = [
-  { surface: "navigation_item" as const, label: "Finance", target: "/finance", sortOrder: 60 },
+  { surface: "navigation_item" as const, label: "Finance", target: "/finance", sortOrder: 60, icon: "Wallet" },
   { surface: "global_search_provider" as const, label: "Transactions & subscriptions", target: "finance/search", sortOrder: 30 },
   {
     surface: "email_notification_category" as const,

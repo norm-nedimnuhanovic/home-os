@@ -24,6 +24,6 @@ export const permissionDeclarations = [
 ];
 
 export const surfaceRegistrations = [
-  { surface: "navigation_item" as const, label: "Dashboard", target: "/dashboard", sortOrder: 0 },
+  { surface: "navigation_item" as const, label: "Dashboard", target: "/dashboard", sortOrder: 0, icon: "LayoutDashboard" },
   { surface: "dashboard_widget" as const, label: "Today", target: "dashboard/widgets/today", sortOrder: 0 },
 ];

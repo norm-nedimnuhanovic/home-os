@@ -117,7 +117,7 @@ export const permissionDeclarations = [
 ];
 
 export const surfaceRegistrations = [
-  { surface: "navigation_item" as const, label: "Life Admin", target: "/life-admin", sortOrder: 70 },
+  { surface: "navigation_item" as const, label: "Life Admin", target: "/life-admin", sortOrder: 70, icon: "ClipboardList" },
   { surface: "global_search_provider" as const, label: "Documents, renewals & contacts", target: "life-admin/search", sortOrder: 40 },
   {
     surface: "email_notification_category" as const,

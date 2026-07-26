@@ -43,7 +43,7 @@ export const permissionDeclarations = [
 ];
 
 export const surfaceRegistrations = [
-  { surface: "navigation_item" as const, label: "Tasks", target: "/tasks", sortOrder: 10 },
+  { surface: "navigation_item" as const, label: "Tasks", target: "/tasks", sortOrder: 10, icon: "ListChecks" },
   { surface: "quick_capture_target" as const, label: "Add a task", target: "tasks/quick-capture", sortOrder: 10 },
   { surface: "global_search_provider" as const, label: "Tasks", target: "tasks/search", sortOrder: 10 },
   {
