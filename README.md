@@ -128,7 +128,7 @@ deployable service, no separate backend.
 | Infra | Supabase — one provider bundling Postgres, Auth, and file Storage |
 | Email | Resend — real transactional email from V1 (not simulated/logged) |
 | Hosting | Vercel |
-| Background jobs | Vercel Cron hitting `src/app/api/cron/*` routes (no long-running server process in V1) |
+| Background jobs | Thin `src/app/api/cron/*` Route Handlers (no long-running server process in V1), each gated by `CRON_SECRET` — triggered by a GitHub Actions scheduled workflow (`.github/workflows/cron.yml`), not Vercel's own Cron feature (its Hobby-plan tier only allows once-per-day schedules, which two of these five routes need finer than — see `docs/email.md` §9.6) |
 | Real-time sync | None — refresh/refetch and polling only, no websockets (locked decision) |
 | Component docs | No Storybook in V1 — shadcn/ui ships consistent, self-documenting components; revisit only if a large bespoke component library emerges |
 
@@ -203,6 +203,38 @@ pnpm dev
 ```bash
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
+
+## Deploying to production
+
+Beyond the standard `vercel link` + environment variables (same table as
+above, but with your *real* Supabase project's values, not local dev's) and
+`.github/workflows/ci.yml`/`.github/workflows/cron.yml`'s two repo settings
+(a `CRON_SECRET` secret and a `SITE_URL` variable, under Settings → Secrets
+and variables → Actions), two easy-to-miss, non-obvious steps — both found
+the hard way during this project's own first real deploy:
+
+1. **Pin the Vercel function region to match your Supabase project's
+   region.** Vercel defaults every serverless function to `iad1` (US East)
+   unless told otherwise; if your Supabase project is anywhere else (e.g.
+   `eu-central-1`), every single Prisma query pays a full cross-region round
+   trip, on every page render — this is the single biggest lever on
+   perceived navigation speed. Set it in `vercel.json`:
+   ```json
+   { "regions": ["fra1"] }
+   ```
+   (substitute whichever Vercel region is closest to your Supabase project's
+   own region — picking a single region is free on Hobby; only *concurrent
+   multi-region* is a Pro feature.)
+2. **Set Supabase Auth's `site_url` and `uri_allow_list`.** This is a
+   *Supabase project* setting (Dashboard → Authentication → URL
+   Configuration, or the Management API's `PATCH /v1/projects/{ref}/config/auth`)
+   — entirely separate from this app's own `NEXT_PUBLIC_SITE_URL` env var.
+   A freshly-provisioned project defaults `site_url` to `http://localhost:3000`
+   with an empty allow list, so Supabase's own auth emails (signup
+   confirmation, password reset) will link to `localhost` instead of your
+   deployed URL until you change it — `NEXT_PUBLIC_SITE_URL` alone does not
+   fix this, since Supabase ignores the app's requested `emailRedirectTo`
+   for any URL not already on its allow list.
 
 See `docs/verify.md` for the full verification checklist — this is also
 enforced for any AI-agent-authored change, per [CLAUDE.md](./CLAUDE.md).
