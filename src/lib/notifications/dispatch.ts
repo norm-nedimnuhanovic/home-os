@@ -45,9 +45,12 @@ async function buildNotificationDetail(
     const taskId = payload.taskId as string | undefined;
     if (!taskId) return generic;
     const [task, assigner] = await Promise.all([
-      prisma.task.findUnique({ where: { id: taskId }, select: { title: true } }),
+      prisma.task.findUnique({ where: { id: taskId, householdId: occurrence.householdId }, select: { title: true } }),
       occurrence.triggeredByMemberId
-        ? prisma.member.findUnique({ where: { id: occurrence.triggeredByMemberId }, select: { displayName: true } })
+        ? prisma.member.findUnique({
+            where: { id: occurrence.triggeredByMemberId, householdId: occurrence.householdId },
+            select: { displayName: true },
+          })
         : null,
     ]);
     return {
@@ -63,7 +66,10 @@ async function buildNotificationDetail(
     const objectId = payload.objectId as string | undefined;
     const sharedByMemberId = payload.sharedByMemberId as string | undefined;
     const sharer = sharedByMemberId
-      ? await prisma.member.findUnique({ where: { id: sharedByMemberId }, select: { displayName: true } })
+      ? await prisma.member.findUnique({
+          where: { id: sharedByMemberId, householdId: occurrence.householdId },
+          select: { displayName: true },
+        })
       : null;
     return {
       title: occurrence.eventType.label,

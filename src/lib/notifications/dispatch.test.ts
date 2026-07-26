@@ -44,6 +44,18 @@ describe("fanOutNotificationsForOccurrence", () => {
     await fanOutNotificationsForOccurrence(seedOccurrence());
 
     expect(getEffectivePreference).toHaveBeenCalledWith("household_1", "member_2", "task.assigned");
+    // Both AND householdId — never id alone (CLAUDE.md rule 1); Task and
+    // Member are both tenant-guarded models, so a where missing householdId
+    // throws at the Prisma layer and would take the whole createTask()
+    // Server Action down with it, not just silently skip the lookup.
+    expect(prisma.task.findUnique).toHaveBeenCalledWith({
+      where: { id: "task_1", householdId: "household_1" },
+      select: { title: true },
+    });
+    expect(prisma.member.findUnique).toHaveBeenCalledWith({
+      where: { id: "member_1", householdId: "household_1" },
+      select: { displayName: true },
+    });
     expect(prisma.notification.create).toHaveBeenCalledWith({
       data: {
         householdId: "household_1",
@@ -85,7 +97,7 @@ describe("fanOutNotificationsForOccurrence", () => {
     );
 
     expect(prisma.member.findUnique).toHaveBeenCalledWith({
-      where: { id: "member_3" },
+      where: { id: "member_3", householdId: "household_1" },
       select: { displayName: true },
     });
     expect(prisma.notification.create).toHaveBeenCalledWith({
