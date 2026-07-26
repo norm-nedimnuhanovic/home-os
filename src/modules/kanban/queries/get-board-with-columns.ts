@@ -29,7 +29,7 @@ export async function getBoardWithColumns(actingMember: ActingMember, boardId: s
           objectType: "Task",
           ownerField: "createdById",
         }),
-        { boardId: board.id },
+        { boardId: board.id, archivedAt: null },
       ],
     },
     orderBy: { boardPosition: "asc" },

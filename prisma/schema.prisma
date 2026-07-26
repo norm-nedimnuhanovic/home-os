@@ -573,6 +573,7 @@ model Task {
   visibility       Visibility          @default(household)
   sourceModule     String?
   sourceEntityId   String?
+  archivedAt       DateTime?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
 

@@ -27,7 +27,7 @@ describe("getTasksDueInRange", () => {
         where: {
           AND: [
             expect.objectContaining({ householdId: "household_1", OR: expect.any(Array) }),
-            { dueDate: { gte: from, lte: to } },
+            { dueDate: { gte: from, lte: to }, archivedAt: null },
           ],
         },
       }),

@@ -34,7 +34,10 @@ describe("getBoardWithColumns", () => {
     expect(prisma.task.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          AND: [expect.objectContaining({ householdId: "household_1" }), { boardId: "board_1" }],
+          AND: [
+            expect.objectContaining({ householdId: "household_1" }),
+            { boardId: "board_1", archivedAt: null },
+          ],
         },
       }),
     );

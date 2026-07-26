@@ -13,7 +13,7 @@ export async function getTasksDueInRange(actingMember: ActingMember, from: Date,
         objectType: "Task",
         ownerField: "createdById",
       }),
-      { dueDate: { gte: from, lte: to } },
+      { dueDate: { gte: from, lte: to }, archivedAt: null },
     ],
   };
 

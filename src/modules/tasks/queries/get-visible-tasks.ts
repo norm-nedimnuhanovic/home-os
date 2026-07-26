@@ -15,6 +15,7 @@ export async function getVisibleTasks(
         ownerField: "createdById",
       }),
       {
+        archivedAt: null,
         ...(filters.assigneeId ? { assigneeId: filters.assigneeId } : {}),
         ...(filters.boardId ? { boardId: filters.boardId } : {}),
         ...(filters.completed === false ? { completedAt: null } : {}),

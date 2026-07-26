@@ -8,6 +8,7 @@ export { createTask } from "./actions/create-task";
 export { updateTask } from "./actions/update-task";
 export { completeTask } from "./actions/complete-task";
 export { reopenTask } from "./actions/reopen-task";
+export { deleteTask } from "./actions/delete-task";
 export { getTaskStatus, taskPrioritySchema, createTaskInputSchema } from "./entities/task";
 export type { CreateTaskInput, CreateTaskFormInput } from "./entities/task";
 // NOT exported: entities/task.ts's schemas beyond the type, actions/*.test.ts,

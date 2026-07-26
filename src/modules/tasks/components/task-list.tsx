@@ -6,6 +6,7 @@ import { useActionFeedback } from "@/hooks/use-action-feedback";
 import { formatInHouseholdTimezone } from "@/lib/dates";
 import { getTaskStatus } from "../entities/task";
 import { completeTask } from "../actions/complete-task";
+import { reopenTask } from "../actions/reopen-task";
 import { TaskRowActions } from "./task-row-actions";
 import type { Task } from "@prisma/client";
 
@@ -65,10 +66,12 @@ export function TaskList({
             <div className="flex min-w-0 items-start gap-3">
               <Checkbox
                 checked={status === "completed"}
-                disabled={status === "completed" || isPending}
-                onCheckedChange={() => run(() => completeTask(task.id))}
+                disabled={isPending}
+                onCheckedChange={(checked) =>
+                  run(() => (checked ? completeTask(task.id) : reopenTask(task.id)))
+                }
                 className="mt-1 shrink-0"
-                aria-label={`Mark "${task.title}" complete`}
+                aria-label={status === "completed" ? `Mark "${task.title}" incomplete` : `Mark "${task.title}" complete`}
               />
               <div className="min-w-0">
                 <p
