@@ -1,0 +1,47 @@
+name: Scheduled jobs
+
+# Vercel's own Cron feature (vercel.json) requires a Pro plan for anything
+# more frequent than once/day — reminders-sweep (every 15 min) and
+# digests-send (hourly) both need that. This workflow calls the same
+# CRON_SECRET-gated route handlers (docs/email.md §9.6) on an equivalent
+# schedule instead, entirely free on GitHub Actions. The route handlers
+# themselves are unchanged — they don't know or care who calls them.
+on:
+  schedule:
+    - cron: "*/15 * * * *" # reminders-sweep
+    - cron: "0 * * * *" # digests-send
+    - cron: "0 6 * * *" # subscriptions-sweep, budgets-sweep, renewals-sweep
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the due cron route(s) for this schedule
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          set -e
+          call() {
+            echo "→ $1"
+            curl -sf -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/cron/$1"
+            echo
+          }
+          case "${{ github.event.schedule }}" in
+            "*/15 * * * *") call reminders-sweep ;;
+            "0 * * * *") call digests-send ;;
+            "0 6 * * *")
+              call subscriptions-sweep
+              call budgets-sweep
+              call renewals-sweep
+              ;;
+            *)
+              # workflow_dispatch (manual run) — exercise every route once.
+              call reminders-sweep
+              call digests-send
+              call subscriptions-sweep
+              call budgets-sweep
+              call renewals-sweep
+              ;;
+          esac

@@ -81,7 +81,7 @@ src/app/api/cron/
 ├── renewals-sweep/route.ts
 └── digests-send/route.ts
 
-vercel.json                          # cron schedule for the five routes above (§9.6)
+.github/workflows/cron.yml           # calls the five routes above on a schedule (§9.6)
 ```
 
 None of the five `jobs/*.ts` files import from `src/app/` — Route Handlers
@@ -934,14 +934,17 @@ export async function sendDueDigests(now = new Date()) {
 
 ---
 
-## 9. Background jobs & Vercel Cron
+## 9. Background jobs & scheduled triggers
 
 Per `plan.md` §6: *"because email must be sent even when no member has the
 app open, a scheduled/background job capability … is required."* Vercel has
-no long-running server process, so every sweep is a Vercel Cron entry
-hitting a thin `app/api/cron/*/route.ts` Route Handler on a fixed schedule
-(`docs/project-structure.md` §6). All five share one shape: verify
-`CRON_SECRET`, call one job function, return.
+no long-running server process, so every sweep is a thin, `CRON_SECRET`-gated
+`app/api/cron/*/route.ts` Route Handler (`docs/project-structure.md` §6),
+hit on a fixed schedule by an external caller — a GitHub Actions workflow
+(§9.6), not Vercel's own Cron feature (Hobby-plan frequency limits made
+that a non-starter for the two sub-daily jobs — see §9.6's finding). All
+five routes share one shape: verify `CRON_SECRET`, call one job function,
+return.
 
 ### 9.1 `reminders-sweep` — every 15 minutes
 
@@ -1195,7 +1198,7 @@ digest-time accuracy too, but the product plan doesn't require minute-level
 digest precision, so hourly keeps the cron entry count and invocation
 volume down.
 
-### 9.6 The route handler pattern + `vercel.json`
+### 9.6 The route handler pattern + who calls it
 
 Every one of the five routes is this shape, verbatim except for which job
 it calls (`docs/project-structure.md` §6):
@@ -1213,18 +1216,41 @@ export async function GET(request: Request) {
 }
 ```
 
-```json
-// vercel.json
-{
-  "crons": [
-    { "path": "/api/cron/reminders-sweep", "schedule": "*/15 * * * *" },
-    { "path": "/api/cron/subscriptions-sweep", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/budgets-sweep", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/renewals-sweep", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/digests-send", "schedule": "0 * * * *" }
-  ]
-}
+The route handlers don't know or care who calls them — only that the
+caller presents the right `CRON_SECRET`. **Real deployment finding**:
+`vercel.json`'s own `crons` array (the original plan) was rejected at
+deploy time — `reminders-sweep` (every 15 min) and `digests-send` (hourly)
+both exceed Vercel's Hobby-plan limit of once-per-day cron schedules, and
+this project runs on Hobby, not Pro. Rather than degrading either job's
+frequency (a real UX regression — reminders firing at most once a day)
+or paying for Pro, the caller was swapped for a free GitHub Actions
+scheduled workflow (`.github/workflows/cron.yml`) hitting the same routes
+on an equivalent schedule:
+
+```yaml
+# .github/workflows/cron.yml (abridged — see the real file for the full case statement)
+on:
+  schedule:
+    - cron: "*/15 * * * *" # reminders-sweep
+    - cron: "0 * * * *" # digests-send
+    - cron: "0 6 * * *" # subscriptions-sweep, budgets-sweep, renewals-sweep
+  workflow_dispatch: {}
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -sf -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/cron/<job>"
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
 ```
+
+Requires two GitHub repo settings (Settings → Secrets and variables →
+Actions): a `CRON_SECRET` **secret** matching the same value set on Vercel,
+and a `SITE_URL` **variable** set to the deployed URL. `vercel.json` is
+deliberately left with no `crons` key — if this project ever moves to
+Vercel Pro, restoring the original array there (and deleting the workflow)
+is a clean, isolated revert.
 
 ### 9.7 Idempotency — cron invocations can overlap, jobs must tolerate it
 
