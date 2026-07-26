@@ -7,6 +7,7 @@ import { UserMenu } from "@/components/app-shell/user-menu";
 import { QuickCapture } from "@/components/app-shell/quick-capture";
 import { CommandPalette } from "@/components/app-shell/command-palette";
 import { NotificationBell } from "@/components/app-shell/notification-bell";
+import { ThemeToggle } from "@/components/app-shell/theme-toggle";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const member = await requireMember();
@@ -39,6 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <NotificationBell />
         <QuickCapture />
         <CommandPalette />
+        <ThemeToggle />
         <div className="mt-auto hidden items-center justify-between gap-2 border-t border-sidebar-border pt-3 sm:flex">
           {userFooter}
         </div>
