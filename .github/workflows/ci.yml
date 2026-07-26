@@ -1,0 +1,54 @@
+name: CI
+
+# Mirrors CLAUDE.md's "Before You're Done" checklist verbatim — lint,
+# typecheck, test, build, in that order, on every PR and on pushes to main.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+
+      - run: pnpm typecheck
+
+      - run: pnpm test
+
+      - name: Build
+        run: pnpm build
+        env:
+          # `next build` evaluates every route's module scope while
+          # collecting page data (docs/toolkit.md's known-gotchas territory)
+          # — src/lib/db.ts constructs a PrismaClient at import time, which
+          # throws if DATABASE_URL is entirely unset. None of these need to
+          # be reachable: no dynamic route actually runs during a build,
+          # only its module-level code executes, and RESEND_API_KEY is
+          # deliberately left empty — the lazy-client fix (ROADMAP.md §8)
+          # means an empty key builds clean, matching local dev without a
+          # real Resend account.
+          DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
+          DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci"
+          NEXT_PUBLIC_SUPABASE_URL: "https://ci.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-anon-key"
+          SUPABASE_SERVICE_ROLE_KEY: "ci-service-role-key"
+          NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+          RESEND_API_KEY: ""
+          EMAIL_FROM: "Home OS <notifications@example.com>"
+          CRON_SECRET: "ci-cron-secret"
