@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BackLink } from "@/components/back-link";
 import { useActionFeedback } from "@/hooks/use-action-feedback";
 import { NoteForm } from "./note-form";
 import { MarkdownBody } from "./markdown-body";
@@ -61,6 +62,7 @@ export function NoteDetail({
 
   return (
     <div className="flex flex-col gap-4">
+      <BackLink href="/notes" label="Notes" />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <h1 className="text-2xl font-semibold">{note.title || "Untitled note"}</h1>
         {isAuthor && (

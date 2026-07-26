@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getBoardWithColumns } from "@/modules/kanban";
 import { getMembers } from "@/lib/household";
 import { requireMember } from "@/lib/auth/session";
+import { BackLink } from "@/components/back-link";
 import { BoardHeader } from "@/modules/kanban/components/board-header";
 import { BoardView } from "@/modules/kanban/components/board-view";
 
@@ -21,6 +22,7 @@ export default async function KanbanBoardPage({
 
   return (
     <div className="flex flex-col gap-4">
+      <BackLink href="/kanban" label="Boards" />
       <BoardHeader board={board} members={members} isOwner={board.createdById === member.id} />
       <BoardView boardId={board.id} columns={board.columns} tasks={board.tasks} />
     </div>

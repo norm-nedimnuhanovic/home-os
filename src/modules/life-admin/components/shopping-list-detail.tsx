@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BackLink } from "@/components/back-link";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useActionFeedback } from "@/hooks/use-action-feedback";
@@ -89,6 +90,7 @@ export function ShoppingListDetail({
 
   return (
     <div className="flex flex-col gap-4">
+      <BackLink href="/life-admin" label="Life Admin" />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold">{list.name}</h1>
         <Button variant="outline" onClick={() => setEditingList(true)} className="w-full sm:w-auto">
