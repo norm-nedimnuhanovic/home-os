@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+build/
+next-env.d.ts
+
+# Environment — never commit real secrets, only .env.example
+.env
+.env.local
+.env.*.local
+
+# Prisma
+prisma/dev.db
+prisma/dev.db-journal
+prisma/*.db
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.vitest-cache/
+
+# TypeScript
+*.tsbuildinfo
+
+# Vercel
+.vercel
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+/node_modules/.prisma/client
+
+/src/generated/prisma

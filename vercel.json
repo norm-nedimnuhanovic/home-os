@@ -1,0 +1,9 @@
+{
+  "crons": [
+    { "path": "/api/cron/reminders-sweep", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/subscriptions-sweep", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/budgets-sweep", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/renewals-sweep", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/digests-send", "schedule": "0 * * * *" }
+  ]
+}

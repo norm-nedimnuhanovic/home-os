@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ' *)",
+      "Bash(grep -c '^```' docs/project-structure.md)",
+      "Bash(grep -c '```' docs/orm-conventions.md)",
+      "Bash(grep -c '^```' /home/nedimnuhanovic/Desktop/Projects/home-os/docs/resources.md)",
+      "Bash(xxd)",
+      "Bash(grep -c '^```' /home/nedimnuhanovic/Desktop/Projects/home-os/docs/seeding.md)",
+      "Bash(grep -c '```' docs/ui-components.md)",
+      "Bash(grep -c '```' /home/nedimnuhanovic/Desktop/Projects/home-os/docs/recipes.md)",
+      "Bash(grep -n 'TEST_DATABASE_URL\\\\|test database\\\\|testcontainers\\\\|docker\\\\|reset the\\\\|beforeEach\\\\|beforeAll\\\\|truncate\\\\|prisma.$transaction\\\\|integration test' docs/orm-conventions.md docs/access-control.md docs/seeding.md docs/resources.md docs/recipes.md)",
+      "Bash(grep -c '^```' docs/tables.md)",
+      "Bash(grep -no \"\\\\`modules/[a-z-]*\\\\|\\(modules/[a-z-]*\" AGENTS.md)",
+      "Bash(sed -i 's/getCurrentMember/requireMember/g; s|@/lib/auth/current-member|@/lib/auth/session|g' docs/auth.md)",
+      "Bash(sed -i 's/getActingMember/requireMember/g; s|@/lib/access/session|@/lib/auth/session|g' docs/access-control.md)",
+      "Bash(sed -i 's/getCurrentMember\\(\\)\\\\/requireRole\\(\\)/requireMember\\(\\)\\\\/requireRole\\(\\)/' CLAUDE.md AGENTS.md)"
+    ]
+  }
+}

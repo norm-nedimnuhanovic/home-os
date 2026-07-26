@@ -1,0 +1,1234 @@
+// Home OS — Prisma schema
+// Single file per docs/orm-conventions.md §1. Organized into ordered section
+// banners matching plan.md §3.1–§3.6. Every scoped model carries householdId
+// + @@index([householdId]) per docs/orm-conventions.md §3.1, even when it's
+// derivable from a parent relation (denormalized for query performance and
+// tenant-isolation guarantees). Platform-catalog models (Module,
+// ModuleEventType, EventSubscription, ModulePermissionDeclaration,
+// ModuleSurfaceRegistration) are the only ones without householdId — see
+// docs/orm-conventions.md §2.1.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// =============================================================================
+// Enums
+// =============================================================================
+
+enum Visibility {
+  private
+  household
+  specific_members
+}
+
+enum HouseholdStatus {
+  active
+  suspended
+  closed
+}
+
+enum MemberRole {
+  owner
+  admin
+  member
+}
+
+enum MemberStatus {
+  active
+  suspended
+  removed
+}
+
+enum InviteRole {
+  admin
+  member
+}
+
+enum InviteStatus {
+  pending
+  accepted
+  expired
+  revoked
+}
+
+enum DigestFrequency {
+  off
+  daily
+  weekly
+}
+
+enum DayOfWeek {
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+  saturday
+  sunday
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum RecurrenceFrequency {
+  daily
+  weekly
+  monthly
+  yearly
+}
+
+enum RecurrenceEndType {
+  never
+  on_date
+  after_count
+}
+
+enum KanbanColumnType {
+  todo
+  in_progress
+  done
+  custom
+}
+
+enum ReminderType {
+  one_off
+  recurring
+}
+
+enum ReminderSourceType {
+  manual
+  task
+  subscription
+  renewal
+  document
+  budget
+  other
+}
+
+enum LeadTimeUnit {
+  minutes
+  hours
+  days
+  weeks
+}
+
+enum ReminderStatus {
+  active
+  paused
+  cancelled
+}
+
+enum ReminderOccurrenceStatus {
+  pending
+  notified
+  snoozed
+  dismissed
+  completed
+  missed
+}
+
+enum NoteType {
+  standard
+  journal
+}
+
+enum NoteLinkedEntityType {
+  task
+  subscription
+  event
+}
+
+enum CategoryType {
+  expense
+  income
+  both
+}
+
+enum TransactionType {
+  expense
+  income
+}
+
+enum TransactionSource {
+  manual
+  subscription
+  imported
+}
+
+enum TransactionStatus {
+  posted
+  void
+}
+
+enum SplitType {
+  none
+  equal
+  percentage
+  custom
+}
+
+enum SettlementStatus {
+  recorded
+  cancelled
+}
+
+enum BudgetPeriod {
+  weekly
+  monthly
+  yearly
+}
+
+enum SubscriptionFrequency {
+  weekly
+  biweekly
+  monthly
+  quarterly
+  yearly
+  custom
+}
+
+enum SubscriptionStatus {
+  active
+  paused
+  cancelled
+}
+
+enum DocumentCategory {
+  warranty_proof
+  insurance_policy
+  id_document
+  receipt
+  manual_guide
+  contract
+  property_record
+  other
+}
+
+enum DocumentLinkedEntityType {
+  renewal
+  contact
+  subscription
+  task
+  note
+  event
+}
+
+enum RenewalType {
+  warranty
+  insurance
+  registration_license
+  membership_subscription
+  certificate_id
+  lease_contract
+  domain_hosting
+  other
+}
+
+enum RenewalRecurrence {
+  none
+  monthly
+  quarterly
+  annual
+  custom_interval
+}
+
+enum RenewalStatus {
+  active
+  expiring_soon
+  expired
+  renewed
+  cancelled
+}
+
+enum ContactCategory {
+  medical
+  emergency_services
+  home_service_provider
+  insurance_agent
+  landlord_property_manager
+  school_childcare
+  financial_legal
+  utility_provider
+  family_friend
+  other
+}
+
+enum ShoppingListType {
+  shopping
+  household_tasks
+  packing
+  gift_ideas
+  other
+}
+
+enum ModuleKind {
+  built_in
+  custom
+}
+
+enum ModuleStatus {
+  active
+  disabled
+  error
+}
+
+enum ModuleHealthStatus {
+  ok
+  degraded
+  missing_dependency
+}
+
+enum EventSubscriptionOnFailure {
+  ignore
+  log_only
+  disable_after_n_failures
+}
+
+enum ResourceDomain {
+  tasks
+  kanban
+  calendar
+  reminders
+  notes
+  finance
+  life_admin
+  members_household
+  notifications_email
+  cross_module_events
+}
+
+enum AccessLevel {
+  read
+  write
+  read_write
+}
+
+enum ModuleGrantStatus {
+  granted
+  revoked
+  pending_review
+}
+
+enum ModuleSurface {
+  dashboard_widget
+  global_search_provider
+  command_palette_action
+  navigation_item
+  quick_capture_target
+  email_notification_category
+}
+
+// =============================================================================
+// 3.1 Household, Members & Sharing (src/lib/household/, src/lib/notifications/)
+// =============================================================================
+
+model Household {
+  id           String          @id @default(cuid())
+  name         String
+  timezone     String
+  baseCurrency String
+  status       HouseholdStatus @default(active)
+  createdAt    DateTime        @default(now())
+
+  members                 Member[]
+  invites                 Invite[]
+  objectShares            ObjectShare[]
+  notifications           Notification[]
+  notificationPreferences NotificationPreference[]
+  digestSubscriptions     DigestSubscription[]
+  tasks                   Task[]
+  taskRecurrenceRules     TaskRecurrenceRule[]
+  tags                    Tag[]
+  taskTags                TaskTag[]
+  kanbanBoards            KanbanBoard[]
+  kanbanColumns           KanbanColumn[]
+  events                  Event[]
+  reminders               Reminder[]
+  reminderOccurrences     ReminderOccurrence[]
+  notes                   Note[]
+  noteTags                NoteTag[]
+  noteLinks               NoteLink[]
+  categories              Category[]
+  transactions            Transaction[]
+  transactionSplits       TransactionSplit[]
+  settlements             Settlement[]
+  budgets                 Budget[]
+  subscriptions           Subscription[]
+  documents               Document[]
+  renewals                Renewal[]
+  contacts                Contact[]
+  shoppingLists           ShoppingList[]
+  shoppingListItems       ShoppingListItem[]
+  eventOccurrences        EventOccurrence[]
+  moduleGrants            ModuleGrant[]
+}
+
+model Member {
+  id              String       @id @default(cuid())
+  householdId     String
+  household       Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  supabaseUserId  String       @unique // 1:1 with auth.users.id — the ONLY auth linkage (docs/auth.md §1)
+  displayName     String
+  email           String
+  role            MemberRole   @default(member)
+  status          MemberStatus @default(active)
+  avatarUrl       String?
+  colorTag        String?
+  emailVerifiedAt DateTime?
+  joinedAt        DateTime     @default(now())
+  lastLoginAt     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Invites this member sent, and the invite this member accepted-from (nullable)
+  invitesSent             Invite[]                 @relation("InviteInvitedByMember")
+  invitesAccepted         Invite[]                 @relation("InviteAcceptedByMember")
+  notificationPreferences NotificationPreference[]
+  digestSubscription      DigestSubscription?
+  notifications           Notification[]
+  objectSharesGranted     ObjectShare[]            @relation("ObjectShareSharedWithMember")
+  objectSharesGivenBy     ObjectShare[]            @relation("ObjectShareSharedByMember")
+
+  // Tasks
+  tasksAssigned       Task[]        @relation("TaskAssignee")
+  tasksCreated        Task[]        @relation("TaskCreatedBy")
+  tasksCompleted      Task[]        @relation("TaskCompletedBy")
+  kanbanBoardsCreated KanbanBoard[] @relation("KanbanBoardCreatedBy")
+  eventsCreated       Event[]       @relation("EventCreatedBy")
+
+  // Reminders & Notes
+  remindersTargeted Reminder[] @relation("ReminderTargetMember")
+  remindersCreated  Reminder[] @relation("ReminderCreatedByMember")
+  notes             Note[]     @relation("NoteAuthorMember")
+  noteLinksCreated  NoteLink[] @relation("NoteLinkCreatedByMember")
+
+  // Finance
+  transactionsPaid            Transaction[]      @relation("TransactionPaidBy")
+  transactionSplits           TransactionSplit[]
+  settlementsFrom             Settlement[]       @relation("SettlementFromMember")
+  settlementsTo               Settlement[]       @relation("SettlementToMember")
+  budgets                     Budget[]
+  subscriptionsResponsibleFor Subscription[]     @relation("SubscriptionResponsibleMember")
+
+  // Life Admin
+  documentsUploaded        Document[]         @relation("DocumentUploadedBy")
+  renewalsResponsibleFor   Renewal[]          @relation("RenewalResponsibleMember")
+  renewalsCreated          Renewal[]          @relation("RenewalCreatedBy")
+  contactsCreated          Contact[]          @relation("ContactCreatedBy")
+  shoppingListsCreated     ShoppingList[]     @relation("ShoppingListCreatedBy")
+  shoppingListItemsAdded   ShoppingListItem[] @relation("ShoppingListItemAddedBy")
+  shoppingListItemsChecked ShoppingListItem[] @relation("ShoppingListItemCheckedBy")
+
+  // Platform
+  modulesRegistered         Module[]          @relation("ModuleRegisteredBy")
+  eventOccurrencesTriggered EventOccurrence[] @relation("EventOccurrenceTriggeredByMember")
+  moduleGrantsGranted       ModuleGrant[]     @relation("ModuleGrantGrantedBy")
+  moduleGrantsRevoked       ModuleGrant[]     @relation("ModuleGrantRevokedBy")
+
+  @@unique([householdId, email])
+  @@index([householdId])
+}
+
+model Invite {
+  id                 String       @id @default(cuid())
+  householdId        String
+  household          Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  email              String
+  role               InviteRole   @default(member)
+  invitedByMemberId  String
+  invitedByMember    Member       @relation("InviteInvitedByMember", fields: [invitedByMemberId], references: [id])
+  token              String       @unique
+  status             InviteStatus @default(pending)
+  expiresAt          DateTime
+  acceptedAt         DateTime?
+  acceptedByMemberId String?
+  acceptedByMember   Member?      @relation("InviteAcceptedByMember", fields: [acceptedByMemberId], references: [id])
+  createdAt          DateTime     @default(now())
+
+  @@index([householdId])
+}
+
+// Generic sharing join table for "specific_members" visibility, for ANY
+// entity from ANY module (present or future) — see plan.md §3.1 conventions.
+// moduleKey/objectType/objectId are polymorphic by convention, not enforced
+// as a DB-level foreign key (docs/orm-conventions.md §4).
+model ObjectShare {
+  id                 String    @id @default(cuid())
+  householdId        String
+  household          Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  moduleKey          String
+  objectType         String
+  objectId           String
+  sharedWithMemberId String
+  sharedWithMember   Member    @relation("ObjectShareSharedWithMember", fields: [sharedWithMemberId], references: [id], onDelete: Cascade)
+  sharedByMemberId   String
+  sharedByMember     Member    @relation("ObjectShareSharedByMember", fields: [sharedByMemberId], references: [id])
+  createdAt          DateTime  @default(now())
+
+  @@unique([householdId, moduleKey, objectType, objectId, sharedWithMemberId])
+  @@index([householdId])
+  @@index([householdId, moduleKey, objectType, objectId])
+}
+
+model NotificationPreference {
+  id            String    @id @default(cuid())
+  householdId   String
+  household     Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  memberId      String
+  member        Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  categoryKey   String
+  emailEnabled  Boolean   @default(true)
+  inAppEnabled  Boolean   @default(true)
+  digestEnabled Boolean   @default(true)
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([memberId, categoryKey])
+  @@index([householdId])
+}
+
+model DigestSubscription {
+  id          String          @id @default(cuid())
+  householdId String
+  household   Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  memberId    String          @unique
+  member      Member          @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  frequency   DigestFrequency @default(off)
+  dayOfWeek   DayOfWeek?
+  timeOfDay   String          @default("07:00")
+  lastSentAt  DateTime?
+  nextRunAt   DateTime?
+  updatedAt   DateTime        @updatedAt
+
+  @@index([householdId])
+}
+
+// Backs the in-app bell/inbox feed for every notification category NOT
+// already backed by a Reminder (see plan.md §3.1 — Reminder-backed
+// categories surface via ReminderOccurrence instead, no duplicate row here).
+model Notification {
+  id                String           @id @default(cuid())
+  householdId       String
+  household         Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  memberId          String
+  member            Member           @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  categoryKey       String
+  sourceModule      String?
+  sourceEntityType  String?
+  sourceEntityId    String?
+  eventOccurrenceId String?
+  eventOccurrence   EventOccurrence? @relation(fields: [eventOccurrenceId], references: [id])
+  title             String
+  body              String?
+  readAt            DateTime?
+  createdAt         DateTime         @default(now())
+
+  @@index([householdId])
+  @@index([memberId, readAt])
+}
+
+// =============================================================================
+// 3.2 Tasks, Kanban & Calendar (src/modules/tasks/, kanban/, calendar/)
+// =============================================================================
+
+model Task {
+  id               String              @id @default(cuid())
+  householdId      String
+  household        Household           @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  title            String
+  description      String?
+  dueDate          DateTime?
+  dueDateAllDay    Boolean             @default(true)
+  priority         TaskPriority        @default(medium)
+  assigneeId       String?
+  assignee         Member?             @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdById      String
+  createdBy        Member              @relation("TaskCreatedBy", fields: [createdById], references: [id])
+  completedAt      DateTime?
+  completedById    String?
+  completedBy      Member?             @relation("TaskCompletedBy", fields: [completedById], references: [id])
+  parentTaskId     String?
+  parentTask       Task?               @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks         Task[]              @relation("TaskSubtasks")
+  seriesId         String?
+  series           Task?               @relation("TaskSeries", fields: [seriesId], references: [id])
+  seriesInstances  Task[]              @relation("TaskSeries")
+  recurrenceRuleId String?             @unique
+  recurrenceRule   TaskRecurrenceRule? @relation(fields: [recurrenceRuleId], references: [id])
+  boardId          String?
+  board            KanbanBoard?        @relation(fields: [boardId], references: [id])
+  columnId         String?
+  column           KanbanColumn?       @relation(fields: [columnId], references: [id])
+  boardPosition    Float?
+  visibility       Visibility          @default(household)
+  sourceModule     String?
+  sourceEntityId   String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  tags                  TaskTag[]
+  reminders             Reminder[]     @relation("ReminderSourceTask")
+  transactionsLinked    Transaction[]  @relation("TransactionLinkedTask")
+  subscriptionFollowUps Subscription[] @relation("SubscriptionFollowUpTask")
+  noteLinks             NoteLink[]     @relation("NoteLinkTask")
+
+  @@index([householdId])
+  @@index([householdId, dueDate])
+  @@index([householdId, assigneeId])
+  @@index([boardId, columnId])
+}
+
+model TaskRecurrenceRule {
+  id              String              @id @default(cuid())
+  householdId     String
+  household       Household           @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  frequency       RecurrenceFrequency
+  interval        Int                 @default(1)
+  byWeekday       DayOfWeek[]
+  endType         RecurrenceEndType   @default(never)
+  endDate         DateTime?
+  occurrenceCount Int?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  task Task?
+
+  @@index([householdId])
+}
+
+model Tag {
+  id          String    @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name        String
+  color       String?
+  createdAt   DateTime  @default(now())
+
+  taskTags TaskTag[]
+  noteTags NoteTag[]
+
+  @@unique([householdId, name])
+  @@index([householdId])
+}
+
+model TaskTag {
+  id          String    @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  taskId      String
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tagId       String
+  tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, tagId])
+  @@index([householdId])
+}
+
+model KanbanBoard {
+  id          String     @id @default(cuid())
+  householdId String
+  household   Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  position    Float
+  visibility  Visibility @default(household)
+  archivedAt  DateTime?
+  createdById String
+  createdBy   Member     @relation("KanbanBoardCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  columns KanbanColumn[]
+  tasks   Task[]
+
+  @@index([householdId])
+}
+
+model KanbanColumn {
+  id          String           @id @default(cuid())
+  householdId String
+  household   Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  boardId     String
+  board       KanbanBoard      @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  name        String
+  position    Float
+  columnType  KanbanColumnType @default(custom)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  tasks Task[]
+
+  @@index([householdId])
+  @@index([boardId])
+}
+
+model Event {
+  id             String     @id @default(cuid())
+  householdId    String
+  household      Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  location       String?
+  startAt        DateTime
+  endAt          DateTime
+  allDay         Boolean    @default(false)
+  visibility     Visibility @default(household)
+  color          String?
+  createdById    String
+  createdBy      Member     @relation("EventCreatedBy", fields: [createdById], references: [id])
+  sourceModule   String?
+  sourceEntityId String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  noteLinks NoteLink[] @relation("NoteLinkEvent")
+
+  @@index([householdId])
+  @@index([householdId, startAt, endAt])
+}
+
+// =============================================================================
+// 3.3 Reminders & Notes (src/lib/reminders/ — shared capability — and src/modules/notes/)
+// =============================================================================
+
+model Reminder {
+  id                   String               @id @default(cuid())
+  householdId          String
+  household            Household            @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  title                String
+  description          String?
+  reminderType         ReminderType
+  targetMemberId       String
+  targetMember         Member               @relation("ReminderTargetMember", fields: [targetMemberId], references: [id])
+  createdByMemberId    String
+  createdByMember      Member               @relation("ReminderCreatedByMember", fields: [createdByMemberId], references: [id])
+  sourceType           ReminderSourceType   @default(manual)
+  sourceModule         String?
+  sourceEntityId       String?
+  firstRemindAt        DateTime
+  leadTimeValue        Int?
+  leadTimeUnit         LeadTimeUnit?
+  recurrenceFrequency  RecurrenceFrequency?
+  recurrenceInterval   Int?                 @default(1)
+  recurrenceDaysOfWeek String?
+  recurrenceEndDate    DateTime?
+  recurrenceCount      Int?
+  status               ReminderStatus       @default(active)
+  emailEnabled         Boolean              @default(true)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  occurrences ReminderOccurrence[]
+
+  // Polymorphic-source convenience relations — only one is ever set, matching
+  // sourceType/sourceEntityId; not enforced at the DB level (docs/orm-conventions.md §4).
+  sourceTaskId         String?
+  sourceTask           Task?         @relation("ReminderSourceTask", fields: [sourceTaskId], references: [id])
+  sourceSubscriptionId String?
+  sourceSubscription   Subscription? @relation("ReminderSourceSubscription", fields: [sourceSubscriptionId], references: [id])
+  sourceRenewalId      String?
+  sourceRenewal        Renewal?      @relation("ReminderSourceRenewal", fields: [sourceRenewalId], references: [id])
+  sourceDocumentId     String?
+  sourceDocument       Document?     @relation("ReminderSourceDocument", fields: [sourceDocumentId], references: [id])
+  sourceBudgetId       String?
+  sourceBudget         Budget?       @relation("ReminderSourceBudget", fields: [sourceBudgetId], references: [id])
+
+  @@index([householdId])
+  @@index([householdId, targetMemberId])
+}
+
+model ReminderOccurrence {
+  id             String                   @id @default(cuid())
+  householdId    String
+  household      Household                @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  reminderId     String
+  reminder       Reminder                 @relation(fields: [reminderId], references: [id], onDelete: Cascade)
+  remindAt       DateTime
+  status         ReminderOccurrenceStatus @default(pending)
+  notifiedAt     DateTime?
+  acknowledgedAt DateTime?
+  snoozedUntil   DateTime?
+  snoozeCount    Int                      @default(0)
+  createdAt      DateTime                 @default(now())
+
+  @@index([householdId])
+  @@index([reminderId, status])
+  @@index([householdId, status, remindAt])
+}
+
+model Note {
+  id             String     @id @default(cuid())
+  householdId    String
+  household      Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  authorMemberId String
+  authorMember   Member     @relation("NoteAuthorMember", fields: [authorMemberId], references: [id])
+  title          String?
+  body           String
+  noteType       NoteType   @default(standard)
+  entryDate      DateTime?
+  visibility     Visibility @default(household)
+  isPinned       Boolean    @default(false)
+  isArchived     Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  tags               NoteTag[]
+  links              NoteLink[]
+  transactionsLinked Transaction[]
+
+  @@unique([authorMemberId, entryDate], name: "one_journal_entry_per_member_per_day")
+  @@index([householdId])
+}
+
+model NoteTag {
+  id          String    @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  noteId      String
+  note        Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tagId       String
+  tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, tagId])
+  @@index([householdId])
+}
+
+model NoteLink {
+  id                 String               @id @default(cuid())
+  householdId        String
+  household          Household            @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  noteId             String
+  note               Note                 @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  linkedEntityModule String
+  linkedEntityType   NoteLinkedEntityType
+  linkedEntityId     String
+  createdByMemberId  String
+  createdByMember    Member               @relation("NoteLinkCreatedByMember", fields: [createdByMemberId], references: [id])
+  createdAt          DateTime             @default(now())
+
+  // Polymorphic-target convenience relations, matching linkedEntityType/linkedEntityId.
+  linkedTaskId         String?
+  linkedTask           Task?         @relation("NoteLinkTask", fields: [linkedTaskId], references: [id])
+  linkedSubscriptionId String?
+  linkedSubscription   Subscription? @relation("NoteLinkSubscription", fields: [linkedSubscriptionId], references: [id])
+  linkedEventId        String?
+  linkedEvent          Event?        @relation("NoteLinkEvent", fields: [linkedEventId], references: [id])
+
+  @@index([householdId])
+}
+
+// =============================================================================
+// 3.4 Finance (src/modules/finance/)
+// =============================================================================
+
+model Category {
+  id              String       @id @default(cuid())
+  householdId     String
+  household       Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name            String
+  type            CategoryType @default(expense)
+  color           String?
+  icon            String?
+  isSystemDefault Boolean      @default(false)
+  archived        Boolean      @default(false)
+  sortOrder       Int?
+
+  transactions  Transaction[]
+  budgets       Budget[]
+  subscriptions Subscription[]
+
+  @@unique([householdId, name, type])
+  @@index([householdId])
+}
+
+model Transaction {
+  id             String            @id @default(cuid())
+  householdId    String
+  household      Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  type           TransactionType
+  amount         Decimal           @db.Decimal(12, 2)
+  currency       String?
+  categoryId     String
+  category       Category          @relation(fields: [categoryId], references: [id])
+  title          String
+  notes          String?
+  date           DateTime
+  paidById       String
+  paidBy         Member            @relation("TransactionPaidBy", fields: [paidById], references: [id])
+  source         TransactionSource @default(manual)
+  subscriptionId String?
+  subscription   Subscription?     @relation(fields: [subscriptionId], references: [id])
+  attachmentId   String?
+  attachment     Document?         @relation(fields: [attachmentId], references: [id])
+  linkedNoteId   String?
+  linkedNote     Note?             @relation(fields: [linkedNoteId], references: [id])
+  linkedTaskId   String?
+  linkedTask     Task?             @relation("TransactionLinkedTask", fields: [linkedTaskId], references: [id])
+  visibility     Visibility        @default(household)
+  splitType      SplitType         @default(none)
+  status         TransactionStatus @default(posted)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  splits TransactionSplit[]
+
+  @@index([householdId])
+  @@index([householdId, date])
+  @@index([householdId, categoryId])
+}
+
+model TransactionSplit {
+  id            String      @id @default(cuid())
+  householdId   String
+  household     Household   @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  memberId      String
+  member        Member      @relation(fields: [memberId], references: [id])
+  shareAmount   Decimal     @db.Decimal(12, 2)
+  sharePercent  Decimal?    @db.Decimal(5, 2)
+  settled       Boolean     @default(false)
+  settledById   String?
+  settledBy     Settlement? @relation(fields: [settledById], references: [id])
+
+  @@unique([transactionId, memberId])
+  @@index([householdId])
+}
+
+model Settlement {
+  id           String           @id @default(cuid())
+  householdId  String
+  household    Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  fromMemberId String
+  fromMember   Member           @relation("SettlementFromMember", fields: [fromMemberId], references: [id])
+  toMemberId   String
+  toMember     Member           @relation("SettlementToMember", fields: [toMemberId], references: [id])
+  amount       Decimal          @db.Decimal(12, 2)
+  date         DateTime         @default(now())
+  method       String?
+  note         String?
+  status       SettlementStatus @default(recorded)
+  createdAt    DateTime         @default(now())
+
+  appliesTo TransactionSplit[]
+
+  @@index([householdId])
+}
+
+model Budget {
+  id                    String       @id @default(cuid())
+  householdId           String
+  household             Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  categoryId            String
+  category              Category     @relation(fields: [categoryId], references: [id])
+  memberId              String?
+  member                Member?      @relation(fields: [memberId], references: [id])
+  period                BudgetPeriod @default(monthly)
+  amount                Decimal      @db.Decimal(12, 2)
+  effectiveFrom         DateTime
+  endDate               DateTime?
+  alertThresholdPercent Int          @default(80)
+  alertOnExceeded       Boolean      @default(true)
+  rolloverUnused        Boolean      @default(false)
+
+  reminders Reminder[] @relation("ReminderSourceBudget")
+
+  @@unique([householdId, categoryId, memberId, period])
+  @@index([householdId])
+}
+
+model Subscription {
+  id                    String                @id @default(cuid())
+  householdId           String
+  household             Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name                  String
+  merchant              String?
+  categoryId            String
+  category              Category              @relation(fields: [categoryId], references: [id])
+  amount                Decimal               @db.Decimal(12, 2)
+  variableAmount        Boolean               @default(false)
+  frequency             SubscriptionFrequency @default(monthly)
+  customIntervalDays    Int?
+  startDate             DateTime
+  endDate               DateTime?
+  nextDueDate           DateTime
+  alertDaysBefore       Int                   @default(3)
+  responsibleMemberId   String
+  responsibleMember     Member                @relation("SubscriptionResponsibleMember", fields: [responsibleMemberId], references: [id])
+  autoCreateTransaction Boolean               @default(false)
+  status                SubscriptionStatus    @default(active)
+  lastPaidDate          DateTime?
+
+  transactions  Transaction[]
+  reminders     Reminder[]    @relation("ReminderSourceSubscription")
+  followUpTasks Task[]        @relation("SubscriptionFollowUpTask")
+  noteLinks     NoteLink[]    @relation("NoteLinkSubscription")
+
+  @@index([householdId])
+  @@index([householdId, nextDueDate])
+}
+
+// =============================================================================
+// 3.5 Life Admin (src/modules/life-admin/)
+// =============================================================================
+
+model Document {
+  id               String                    @id @default(cuid())
+  householdId      String
+  household        Household                 @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  title            String
+  fileRef          String
+  mimeType         String?
+  fileSizeBytes    Int?
+  category         DocumentCategory          @default(other)
+  description      String?
+  linkedEntityType DocumentLinkedEntityType?
+  linkedEntityId   String?
+  uploadedById     String
+  uploadedBy       Member                    @relation("DocumentUploadedBy", fields: [uploadedById], references: [id])
+  visibility       Visibility                @default(household)
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+
+  transactionsAttached Transaction[]
+  reminders            Reminder[]    @relation("ReminderSourceDocument")
+  renewals             Renewal[]
+
+  @@index([householdId])
+}
+
+model Renewal {
+  id                  String            @id @default(cuid())
+  householdId         String
+  household           Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  title               String
+  type                RenewalType
+  provider            String?
+  purchaseOrIssueDate DateTime?
+  expiryDate          DateTime
+  reminderOffsetsDays Int[]             @default([30])
+  recurrence          RenewalRecurrence @default(none)
+  status              RenewalStatus     @default(active)
+  responsibleMemberId String?
+  responsibleMember   Member?           @relation("RenewalResponsibleMember", fields: [responsibleMemberId], references: [id])
+  providerContactId   String?
+  providerContact     Contact?          @relation(fields: [providerContactId], references: [id])
+  lastRenewedAt       DateTime?
+  visibility          Visibility        @default(household)
+  createdById         String
+  createdBy           Member            @relation("RenewalCreatedBy", fields: [createdById], references: [id])
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  documents Document[]
+  reminders Reminder[] @relation("ReminderSourceRenewal")
+
+  @@index([householdId])
+  @@index([householdId, status, expiryDate])
+}
+
+model Contact {
+  id          String          @id @default(cuid())
+  householdId String
+  household   Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name        String
+  category    ContactCategory @default(other)
+  phone       String?
+  email       String?
+  address     String?
+  website     String?
+  notes       String?
+  isPinned    Boolean         @default(false)
+  visibility  Visibility      @default(household)
+  createdById String
+  createdBy   Member          @relation("ContactCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  renewalsAsProvider Renewal[]
+
+  @@index([householdId])
+}
+
+model ShoppingList {
+  id          String           @id @default(cuid())
+  householdId String
+  household   Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name        String
+  type        ShoppingListType @default(shopping)
+  description String?
+  isArchived  Boolean          @default(false)
+  visibility  Visibility       @default(household)
+  createdById String
+  createdBy   Member           @relation("ShoppingListCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  items ShoppingListItem[]
+
+  @@index([householdId])
+}
+
+model ShoppingListItem {
+  id          String       @id @default(cuid())
+  householdId String
+  household   Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  listId      String
+  list        ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  name        String
+  quantity    String?
+  category    String?
+  isChecked   Boolean      @default(false)
+  checkedById String?
+  checkedBy   Member?      @relation("ShoppingListItemCheckedBy", fields: [checkedById], references: [id])
+  checkedAt   DateTime?
+  addedById   String
+  addedBy     Member       @relation("ShoppingListItemAddedBy", fields: [addedById], references: [id])
+  sortOrder   Float
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([householdId])
+  @@index([listId])
+}
+
+// =============================================================================
+// 3.6 Platform & Extensibility (src/lib/module-registry/, src/lib/events/)
+// Global/platform-catalog models carry NO householdId — see docs/orm-conventions.md §2.1.
+// =============================================================================
+
+model Module {
+  id             String             @id @default(cuid())
+  key            String             @unique
+  name           String
+  description    String?
+  version        String
+  kind           ModuleKind
+  status         ModuleStatus       @default(active)
+  healthStatus   ModuleHealthStatus @default(ok)
+  installedAt    DateTime           @default(now())
+  registeredById String?
+  registeredBy   Member?            @relation("ModuleRegisteredBy", fields: [registeredById], references: [id])
+
+  // Self many-to-many soft dependency graph.
+  dependsOn    Module[] @relation("ModuleDependsOn")
+  dependedOnBy Module[] @relation("ModuleDependsOn")
+
+  eventTypes             ModuleEventType[]
+  subscriptions          EventSubscription[]           @relation("EventSubscriptionSubscriberModule")
+  eventOccurrences       EventOccurrence[]
+  permissionDeclarations ModulePermissionDeclaration[]
+  grants                 ModuleGrant[]
+  surfaceRegistrations   ModuleSurfaceRegistration[]
+}
+
+model ModuleEventType {
+  id                String  @id @default(cuid())
+  owningModuleId    String
+  owningModule      Module  @relation(fields: [owningModuleId], references: [id], onDelete: Cascade)
+  key               String  @unique
+  label             String
+  payloadSummary    String
+  contractVersion   Int     @default(1)
+  relatedEntityType String?
+
+  subscriptions    EventSubscription[]
+  eventOccurrences EventOccurrence[]
+}
+
+model EventSubscription {
+  id                      String                     @id @default(cuid())
+  subscriberModuleId      String
+  subscriberModule        Module                     @relation("EventSubscriptionSubscriberModule", fields: [subscriberModuleId], references: [id], onDelete: Cascade)
+  eventTypeId             String
+  eventType               ModuleEventType            @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  reactionDescription     String
+  active                  Boolean                    @default(true)
+  onFailure               EventSubscriptionOnFailure @default(log_only)
+  consecutiveFailureCount Int                        @default(0)
+  lastTriggeredAt         DateTime?
+  lastError               String?
+
+  @@unique([subscriberModuleId, eventTypeId])
+}
+
+model EventOccurrence {
+  id                    String          @id @default(cuid())
+  householdId           String
+  household             Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  eventTypeId           String
+  eventType             ModuleEventType @relation(fields: [eventTypeId], references: [id])
+  emittedByModuleId     String
+  emittedByModule       Module          @relation(fields: [emittedByModuleId], references: [id])
+  occurredAt            DateTime        @default(now())
+  triggeredByMemberId   String?
+  triggeredByMember     Member?         @relation("EventOccurrenceTriggeredByMember", fields: [triggeredByMemberId], references: [id])
+  payloadSnapshot       Json
+  subscriptionsNotified Int             @default(0)
+
+  notifications Notification[]
+
+  @@index([householdId])
+  @@index([householdId, eventTypeId])
+}
+
+model ModulePermissionDeclaration {
+  id             String         @id @default(cuid())
+  moduleId       String
+  module         Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  resourceDomain ResourceDomain
+  accessLevel    AccessLevel
+  purpose        String
+  isRequired     Boolean        @default(true)
+
+  grants ModuleGrant[]
+
+  @@unique([moduleId, resourceDomain])
+}
+
+model ModuleGrant {
+  id                      String                      @id @default(cuid())
+  householdId             String
+  household               Household                   @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  moduleId                String
+  module                  Module                      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  permissionDeclarationId String
+  permissionDeclaration   ModulePermissionDeclaration @relation(fields: [permissionDeclarationId], references: [id], onDelete: Cascade)
+  status                  ModuleGrantStatus           @default(pending_review)
+  grantedById             String?
+  grantedBy               Member?                     @relation("ModuleGrantGrantedBy", fields: [grantedById], references: [id])
+  grantedAt               DateTime?
+  revokedById             String?
+  revokedBy               Member?                     @relation("ModuleGrantRevokedBy", fields: [revokedById], references: [id])
+  revokedAt               DateTime?
+
+  @@unique([householdId, moduleId, permissionDeclarationId])
+  @@index([householdId])
+}
+
+// Not household-scoped — platform catalog data, like Module/ModuleEventType/
+// EventSubscription/ModulePermissionDeclaration (docs/orm-conventions.md §2.1).
+model ModuleSurfaceRegistration {
+  id        String        @id @default(cuid())
+  moduleId  String
+  module    Module        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  surface   ModuleSurface
+  label     String
+  icon      String?
+  target    String
+  sortOrder Int           @default(0)
+  enabled   Boolean       @default(true)
+
+  @@unique([moduleId, surface, target])
+}

@@ -1,0 +1,19 @@
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
+  "@prisma/client": true
+  "@prisma/engines": true
+  prisma: true
+  esbuild: true
+
+overrides:
+  # @radix-ui/react-slot@1.3.x introduced a context-based mergeProps
+  # implementation that calls React.createContext at module scope without a
+  # "use client" directive (confirmed: dist/index.mjs has no directive, still
+  # true as of 1.3.1/latest). Next's RSC build ends up executing that module
+  # under the react-server condition (which has no createContext) while
+  # collecting page data, crashing every page that renders a component using
+  # Slot's asChild. 1.2.5 is the newest version predating the context-based
+  # rewrite (no createContext call at all, so no directive is needed) and
+  # exports the same public API (Slot/Root/Slottable/createSlot/createSlottable).
+  "@radix-ui/react-slot": "1.2.5"
