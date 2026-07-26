@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 import { CategoryForm } from "./category-form";
 import { archiveCategory } from "../actions/archive-category";
 import type { Category } from "@prisma/client";
 
 export function CategoryList({ categories }: { categories: Category[] }) {
-  const [isPending, startTransition] = useTransition();
+  const { isPending, run } = useActionFeedback();
   const [editing, setEditing] = useState<Category | null>(null);
   const [newOpen, setNewOpen] = useState(false);
 
@@ -43,11 +44,7 @@ export function CategoryList({ categories }: { categories: Category[] }) {
               size="sm"
               className="h-6 px-1 text-xs text-muted-foreground"
               disabled={isPending}
-              onClick={() =>
-                startTransition(async () => {
-                  await archiveCategory(category.id);
-                })
-              }
+              onClick={() => run(() => archiveCategory(category.id), "Category archived")}
             >
               Archive
             </Button>

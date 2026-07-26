@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -28,6 +29,7 @@ export function MarkRenewalRenewedDialog({
   async function onSubmit(values: MarkRenewedFormInput) {
     try {
       await markRenewalRenewed(renewalId, values);
+      toast.success("Renewal marked as renewed");
       onOpenChange(false);
     } catch (err) {
       form.setError("root", {

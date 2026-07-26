@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -49,6 +50,7 @@ export function ReplaceDocumentDialog({
 
       await confirmDocumentReplace(documentId, { newPath: path, mimeType: file.type, fileSizeBytes: file.size });
 
+      toast.success("Document replaced");
       setFile(null);
       onOpenChange(false);
     } catch (err) {

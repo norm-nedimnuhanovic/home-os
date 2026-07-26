@@ -78,6 +78,7 @@ export function SettlementList({
             : ""
         }
         confirmLabel="Cancel settlement"
+        successMessage="Settlement cancelled"
         onConfirm={() => cancelSettlement(cancelling!.id)}
       />
     </>

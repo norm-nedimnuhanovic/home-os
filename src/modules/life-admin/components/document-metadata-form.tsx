@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +41,7 @@ export function DocumentMetadataForm({
   async function onSubmit(values: UpdateDocumentMetadataFormInput) {
     try {
       await updateDocumentMetadata(document.id, values);
+      toast.success("Document updated");
       onDone();
     } catch (err) {
       form.setError("root", {

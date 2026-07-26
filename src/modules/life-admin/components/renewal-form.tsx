@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -61,8 +62,10 @@ export function RenewalForm({
     try {
       if (renewal) {
         await updateRenewal(renewal.id, values);
+        toast.success("Renewal updated");
       } else {
         await createRenewal(values);
+        toast.success("Renewal created");
       }
       onDone();
     } catch (err) {

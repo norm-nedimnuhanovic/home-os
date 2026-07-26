@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 import { SubscriptionForm } from "./subscription-form";
 import { pauseSubscription } from "../actions/pause-subscription";
 import { resumeSubscription } from "../actions/resume-subscription";
@@ -25,7 +26,7 @@ export function SubscriptionRowActions({
   categories: CategoryOption[];
   actingMemberId: string;
 }) {
-  const [isPending, startTransition] = useTransition();
+  const { isPending, run } = useActionFeedback();
   const [editOpen, setEditOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const cancelled = subscription.status === "cancelled";
@@ -37,7 +38,7 @@ export function SubscriptionRowActions({
           variant="outline"
           size="sm"
           disabled={isPending}
-          onClick={() => startTransition(async () => { await markSubscriptionPaid(subscription.id); })}
+          onClick={() => run(() => markSubscriptionPaid(subscription.id), "Subscription marked as paid")}
         >
           Mark paid
         </Button>
@@ -48,10 +49,9 @@ export function SubscriptionRowActions({
           size="sm"
           disabled={isPending}
           onClick={() =>
-            startTransition(async () => {
-              if (subscription.status === "paused") await resumeSubscription(subscription.id);
-              else await pauseSubscription(subscription.id);
-            })
+            subscription.status === "paused"
+              ? run(() => resumeSubscription(subscription.id), "Subscription resumed")
+              : run(() => pauseSubscription(subscription.id), "Subscription paused")
           }
         >
           {subscription.status === "paused" ? "Resume" : "Pause"}
@@ -92,6 +92,7 @@ export function SubscriptionRowActions({
         title="Cancel subscription"
         description={`"${subscription.name}" will be cancelled and stop generating due-date reminders. This cannot be undone.`}
         confirmLabel="Cancel subscription"
+        successMessage="Subscription cancelled"
         onConfirm={() => cancelSubscription(subscription.id)}
       />
     </div>

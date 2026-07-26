@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -66,8 +67,10 @@ export function EventForm({
     try {
       if (event) {
         await updateEvent(event.id, values);
+        toast.success("Event updated");
       } else {
         await createEvent(values);
+        toast.success("Event created");
       }
       onDone();
     } catch (err) {

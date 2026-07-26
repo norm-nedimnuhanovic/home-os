@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -48,6 +49,7 @@ export function SettlementForm({
   async function onSubmit(values: CreateSettlementFormInput) {
     try {
       await createSettlement(values);
+      toast.success("Settlement created");
       onDone();
     } catch (err) {
       form.setError("root", {

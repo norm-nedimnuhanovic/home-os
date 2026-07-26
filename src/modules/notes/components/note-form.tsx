@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,8 +53,10 @@ export function NoteForm({
     try {
       if (note) {
         await updateNote(note.id, values);
+        toast.success("Note updated");
       } else {
         await createNote(values);
+        toast.success("Note created");
       }
       onDone();
     } catch (err) {

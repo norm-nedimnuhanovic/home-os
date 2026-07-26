@@ -53,6 +53,7 @@ never as a follow-up PR.** Concretely, that means:
 | **Unit** | `entities/*.ts`, small pure functions in `lib/*.ts` | Vitest | nothing | A `zod` schema or a business-rule function (e.g. `getTaskStatus()`) is correct in total isolation |
 | **Integration** | `actions/*.ts`, `queries/*.ts`, `jobs/*.ts`, `events/*.ts`, `app/api/**/route.ts` | Vitest | `@/lib/db`, `@/lib/auth/session`, `@/lib/events/emit` | Auth resolution + role/visibility checks + business logic + the exact Prisma call shape a Server Action/job/route produces — without a live database |
 | **Component** | `components/*.tsx` (Client Components only) | Vitest + React Testing Library | The module's own `actions/*` (mocked) | A form or interactive component renders, validates, and calls the right action with the right input |
+| **Hook** | `src/hooks/*.ts` | Vitest + React Testing Library's `renderHook`/`act` | Whatever the hook itself calls (e.g. `sonner`) | A shared hook's own logic (e.g. `useActionFeedback`'s success/error branching) is correct in isolation, independent of any one component that happens to use it |
 | **E2E** | `e2e/*.spec.ts` | Playwright | Nothing — real dev/build server + a real, seeded Postgres | A **cross-module** user flow genuinely works end to end |
 
 Nothing in Home OS is tested at more than one of these layers for the same

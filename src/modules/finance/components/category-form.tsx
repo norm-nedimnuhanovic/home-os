@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,8 +28,10 @@ export function CategoryForm({ category, onDone }: { category?: Category; onDone
     try {
       if (category) {
         await updateCategory(category.id, values);
+        toast.success("Category updated");
       } else {
         await createCategory(values);
+        toast.success("Category created");
       }
       onDone();
     } catch (err) {

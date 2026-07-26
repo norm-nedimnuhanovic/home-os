@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,9 +45,11 @@ export function BoardForm({
     try {
       if (board) {
         await updateBoard(board.id, values);
+        toast.success("Board updated");
         onDone();
       } else {
         const created = await createBoard(values);
+        toast.success("Board created");
         onDone();
         router.push(`/kanban/${created.id}`);
       }

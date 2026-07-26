@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -70,8 +71,10 @@ export function SubscriptionForm({
     try {
       if (subscription) {
         await updateSubscription(subscription.id, values);
+        toast.success("Subscription updated");
       } else {
         await createSubscription(values);
+        toast.success("Subscription created");
       }
       onDone();
     } catch (err) {

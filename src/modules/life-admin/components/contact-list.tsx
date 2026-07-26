@@ -106,6 +106,7 @@ export function ContactList({ contacts, members }: { contacts: Contact[]; member
         title="Delete contact"
         description={deleting ? `"${deleting.name}" will be permanently deleted. This cannot be undone.` : ""}
         confirmLabel="Delete"
+        successMessage="Contact deleted"
         onConfirm={() => deleteContact(deleting!.id)}
       />
     </div>

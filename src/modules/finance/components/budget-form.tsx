@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -53,8 +54,10 @@ export function BudgetForm({
     try {
       if (budget) {
         await updateBudget(budget.id, values);
+        toast.success("Budget updated");
       } else {
         await createBudget(values);
+        toast.success("Budget created");
       }
       onDone();
     } catch (err) {

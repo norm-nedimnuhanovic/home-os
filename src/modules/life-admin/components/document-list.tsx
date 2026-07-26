@@ -92,6 +92,7 @@ export function DocumentList({ documents, members }: { documents: Document[]; me
           deleting ? `"${deleting.title}" and its stored file will be permanently deleted. This cannot be undone.` : ""
         }
         confirmLabel="Delete"
+        successMessage="Document deleted"
         onConfirm={() => deleteDocument(deleting!.id)}
       />
     </>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -38,7 +39,11 @@ export function MemberRowActions({
   async function changeRole(nextRole: MemberRole) {
     setError(null);
     const result = await changeMemberRole(member.id, nextRole);
+    // changeMemberRole() returns an ActionResult, never throws — a plain
+    // useActionFeedback()/try-catch wrapper would swallow a {success:false}
+    // return and wrongly report success, so this stays a manual check.
     if (!result.success) setError(result.error ?? "Something went wrong.");
+    else toast.success("Role updated");
   }
 
   return (
@@ -82,6 +87,7 @@ export function MemberRowActions({
         title="Remove member"
         description={`${member.displayName} will lose access to this household. Their existing tasks/notes/etc. stay attributed to them.`}
         confirmLabel="Remove"
+        successMessage="Member removed"
         onConfirm={() => callOrThrow(() => removeMember(member.id))}
       />
       <ConfirmDialog
@@ -90,6 +96,7 @@ export function MemberRowActions({
         title="Transfer ownership"
         description={`${member.displayName} becomes the owner; you become an admin. This cannot be undone by anyone but the new owner.`}
         confirmLabel="Transfer ownership"
+        successMessage="Ownership transferred"
         onConfirm={() => callOrThrow(() => transferOwnership(member.id))}
       />
     </div>

@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,8 +40,10 @@ export function ShoppingListForm({
     try {
       if (list) {
         await updateShoppingList(list.id, values);
+        toast.success("Shopping list updated");
       } else {
         await createShoppingList(values);
+        toast.success("Shopping list created");
       }
       onDone();
     } catch (err) {

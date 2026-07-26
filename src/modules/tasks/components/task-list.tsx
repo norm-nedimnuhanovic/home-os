@@ -1,8 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 import { formatInHouseholdTimezone } from "@/lib/dates";
 import { getTaskStatus } from "../entities/task";
 import { completeTask } from "../actions/complete-task";
@@ -43,7 +43,7 @@ export function TaskList({
   members: MemberOption[];
   tags: TagOption[];
 }) {
-  const [isPending, startTransition] = useTransition();
+  const { isPending, run } = useActionFeedback();
 
   if (tasks.length === 0) {
     return (
@@ -66,11 +66,7 @@ export function TaskList({
               <Checkbox
                 checked={status === "completed"}
                 disabled={status === "completed" || isPending}
-                onCheckedChange={() =>
-                  startTransition(async () => {
-                    await completeTask(task.id);
-                  })
-                }
+                onCheckedChange={() => run(() => completeTask(task.id))}
                 className="mt-1 shrink-0"
                 aria-label={`Mark "${task.title}" complete`}
               />

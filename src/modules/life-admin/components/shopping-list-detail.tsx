@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 import { ShoppingListForm } from "./shopping-list-form";
 import {
   createShoppingListItemInputSchema,
@@ -31,7 +33,7 @@ export function ShoppingListDetail({
   list: ShoppingList & { items: ItemRow[] };
   members: MemberOption[];
 }) {
-  const [isPending, startTransition] = useTransition();
+  const { isPending, run } = useActionFeedback();
   const [editingList, setEditingList] = useState(false);
 
   const form = useForm<CreateShoppingListItemFormInput>({
@@ -40,8 +42,15 @@ export function ShoppingListDetail({
   });
 
   async function onAddItem(values: CreateShoppingListItemFormInput) {
-    await addShoppingListItem(list.id, values);
-    form.reset({ name: "" });
+    try {
+      await addShoppingListItem(list.id, values);
+      toast.success("Item added");
+      form.reset({ name: "" });
+    } catch (err) {
+      form.setError("root", {
+        message: err instanceof Error ? err.message : "Something went wrong.",
+      });
+    }
   }
 
   const unchecked = list.items.filter((item) => !item.isChecked);
@@ -54,9 +63,7 @@ export function ShoppingListDetail({
           checked={item.isChecked}
           disabled={isPending}
           onCheckedChange={(value) =>
-            startTransition(async () => {
-              await toggleShoppingListItemChecked(list.id, item.id, value === true);
-            })
+            run(() => toggleShoppingListItemChecked(list.id, item.id, value === true))
           }
           aria-label={`Mark "${item.name}" ${item.isChecked ? "unchecked" : "checked"}`}
         />
@@ -72,7 +79,7 @@ export function ShoppingListDetail({
           size="sm"
           disabled={isPending}
           className="shrink-0 text-destructive hover:text-destructive"
-          onClick={() => startTransition(async () => { await removeShoppingListItem(list.id, item.id); })}
+          onClick={() => run(() => removeShoppingListItem(list.id, item.id), "Item removed")}
         >
           Remove
         </Button>
@@ -88,6 +95,10 @@ export function ShoppingListDetail({
           Edit list
         </Button>
       </div>
+
+      {form.formState.errors.root && (
+        <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
+      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onAddItem)} className="flex flex-col gap-2 sm:flex-row">

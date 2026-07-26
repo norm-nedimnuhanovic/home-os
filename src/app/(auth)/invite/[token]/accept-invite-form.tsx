@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +43,7 @@ export function AcceptInviteForm({
     // session cookie (docs/auth.md §5).
     const supabase = createBrowserSupabaseClient();
     await supabase.auth.signInWithPassword({ email, password });
+    toast.success(`Welcome to ${householdName}`);
     router.push("/dashboard");
   }
 

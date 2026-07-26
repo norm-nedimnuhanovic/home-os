@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { reviewModuleGrant } from "./actions";
@@ -30,7 +31,11 @@ export function ModuleGrantRowActions({
   async function review(decision: "granted" | "revoked") {
     setError(null);
     const result = await reviewModuleGrant(grant.permissionDeclarationId, decision);
+    // reviewModuleGrant() returns an ActionResult, never throws — a plain
+    // useActionFeedback()/try-catch wrapper would swallow a {success:false}
+    // return and wrongly report success, so this stays a manual check.
     if (!result.success) setError(result.error ?? "Something went wrong.");
+    else toast.success(decision === "granted" ? "Permission approved" : "Permission denied");
   }
 
   // ConfirmDialog's contract expects onConfirm to throw on failure so it can
@@ -86,6 +91,7 @@ export function ModuleGrantRowActions({
             : "The module will lose this permission immediately and degrade gracefully without it."
         }
         confirmLabel="Revoke"
+        successMessage="Permission revoked"
         onConfirm={() => callOrThrow(() => reviewModuleGrant(grant.permissionDeclarationId, "revoked"))}
       />
     </div>

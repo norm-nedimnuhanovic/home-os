@@ -128,6 +128,7 @@ export function RenewalList({
             : ""
         }
         confirmLabel="Cancel renewal"
+        successMessage="Renewal cancelled"
         onConfirm={() => cancelRenewal(cancelling!.id)}
       />
     </>

@@ -1,9 +1,9 @@
 "use client";
 
-import { useTransition } from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 import { getOccurrenceStatus } from "../entities/occurrence-status";
 import { cancelReminder } from "../actions/cancel-reminder";
 import { OccurrenceActions } from "./occurrence-actions";
@@ -41,7 +41,7 @@ export function ReminderList({
   reminders: ReminderRow[];
   actingMemberId: string;
 }) {
-  const [isPending, startTransition] = useTransition();
+  const { isPending, run } = useActionFeedback();
 
   if (reminders.length === 0) {
     return (
@@ -89,11 +89,7 @@ export function ReminderList({
                 size="sm"
                 disabled={isPending}
                 className="w-full self-start sm:w-auto"
-                onClick={() =>
-                  startTransition(async () => {
-                    await cancelReminder(reminder.id);
-                  })
-                }
+                onClick={() => run(() => cancelReminder(reminder.id), "Reminder cancelled")}
               >
                 Cancel reminder
               </Button>

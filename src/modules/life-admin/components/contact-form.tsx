@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,8 +47,10 @@ export function ContactForm({
     try {
       if (contact) {
         await updateContact(contact.id, values);
+        toast.success("Contact updated");
       } else {
         await createContact(values);
+        toast.success("Contact created");
       }
       onDone();
     } catch (err) {

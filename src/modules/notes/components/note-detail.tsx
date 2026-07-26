@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 import { NoteForm } from "./note-form";
 import { MarkdownBody } from "./markdown-body";
 import { NoteLinkDialog } from "./note-link-dialog";
@@ -33,7 +34,7 @@ export function NoteDetail({
   linkableEvents: { id: string; label: string }[];
 }) {
   const [editing, setEditing] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const { isPending, run } = useActionFeedback();
   const router = useRouter();
   const isAuthor = note.authorMemberId === currentMemberId;
 
@@ -73,14 +74,15 @@ export function NoteDetail({
               disabled={isPending}
               className="w-full sm:w-auto"
               onClick={() =>
-                startTransition(async () => {
-                  if (note.isArchived) {
-                    await unarchiveNote(note.id);
-                  } else {
-                    await archiveNote(note.id);
-                    router.push("/notes");
-                  }
-                })
+                note.isArchived
+                  ? run(() => unarchiveNote(note.id), "Note unarchived")
+                  : run(
+                      async () => {
+                        await archiveNote(note.id);
+                        router.push("/notes");
+                      },
+                      "Note archived",
+                    )
               }
             >
               {note.isArchived ? "Unarchive" : "Archive"}
@@ -116,11 +118,7 @@ export function NoteDetail({
                   variant="ghost"
                   size="sm"
                   disabled={isPending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      await unlinkNote(note.id, link.id);
-                    })
-                  }
+                  onClick={() => run(() => unlinkNote(note.id, link.id), "Link removed")}
                 >
                   Remove
                 </Button>

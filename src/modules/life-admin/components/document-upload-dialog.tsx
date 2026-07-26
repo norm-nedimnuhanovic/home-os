@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,6 +56,7 @@ export function DocumentUploadDialog({ members }: { members: MemberOption[] }) {
 
       await confirmDocumentUpload({ ...values, documentId, path, mimeType: file.type, fileSizeBytes: file.size });
 
+      toast.success("Document uploaded");
       setOpen(false);
       setFile(null);
       form.reset();

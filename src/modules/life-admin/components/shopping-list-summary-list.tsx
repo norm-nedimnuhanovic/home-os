@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 import { archiveShoppingList } from "../actions/archive-shopping-list";
 import type { ShoppingList } from "@prisma/client";
 
 export function ShoppingListSummaryList({ lists }: { lists: ShoppingList[] }) {
-  const [isPending, startTransition] = useTransition();
+  const { isPending, run } = useActionFeedback();
 
   if (lists.length === 0) {
     return (
@@ -32,7 +32,7 @@ export function ShoppingListSummaryList({ lists }: { lists: ShoppingList[] }) {
             variant="ghost"
             size="sm"
             disabled={isPending}
-            onClick={() => startTransition(async () => { await archiveShoppingList(list.id); })}
+            onClick={() => run(() => archiveShoppingList(list.id), "Shopping list archived")}
           >
             Archive
           </Button>

@@ -649,3 +649,49 @@ story":
    one error/edge state (§12).
 10. `pnpm lint && pnpm typecheck && pnpm test && pnpm build` before calling
     it done, per `CLAUDE.md`'s verification rule.
+
+---
+
+## 15. Success/error feedback (toasts)
+
+Sonner's `<Toaster />` is mounted once, in the root `src/app/layout.tsx` —
+never mount a second one. `import { toast } from "sonner"` anywhere a
+mutation needs to report its result; there is no wrapper component for the
+call itself, only for the three mechanisms below.
+
+**Wording convention:** past-tense, `"{Entity} {verb}"`, no exclamation
+mark, Title-case entity name matching that module's own UI copy.
+`"{Entity} created"`/`"{Entity} updated"` are the *generic* defaults, used
+only for a plain form save with no more specific verb available — an action
+that transitions an entity to a specific named state always uses that verb
+instead (`"Subscription paused"`, never `"Subscription updated"`). This
+codebase spells it **"cancelled"** (double-L, matching the
+`RenewalStatus`/`SubscriptionStatus` enum values themselves), not
+"canceled".
+
+**Three mechanisms, by call-site shape — don't invent a fourth:**
+
+- **A form's own `onSubmit`** (§9): every `*-form.tsx` already has an
+  identical `try { await createX/updateX(...); onDone(); } catch { form.setError("root", ...) }`
+  shape. Add `toast.success(...)` right after the mutation resolves, before
+  `onDone()` — inside the form itself, not at each dialog/list call site
+  that renders it, so every current and future caller gets it for free.
+- **A destructive confirmation** — always the shared `ConfirmDialog`
+  (`src/components/confirm-dialog.tsx`), never a hand-rolled `AlertDialog`
+  (a real bug was found and fixed where two components did exactly that,
+  with zero error handling at all). Pass `successMessage`; omit it only
+  when `onConfirm` itself navigates away or ends the session (e.g.
+  `closeHousehold()` + `logout()`) — a toast that can't render, or renders
+  on an unrelated page, is worse than no toast.
+- **A fire-and-forget button** with no form and no confirmation (a
+  checkbox, an archive/pause/resume button) — `useActionFeedback()`
+  (`src/hooks/use-action-feedback.ts`). Replace
+  `startTransition(async () => { await someAction(...) })` with
+  `run(() => someAction(...), "optional success message")`. Omit the
+  message for a toggle clicked repeatedly in quick succession (a checkbox,
+  a pause/resume switch) — a toast on every click is noise, not signal; the
+  error path still always fires. **Do not use this hook** for an action that
+  returns an `ActionResult` (`{success, error}`) instead of throwing — the
+  hook assumes throw-on-failure and would silently treat a logical failure
+  as success. Those sites (there are a couple, e.g. `changeMemberRole()`)
+  add the toast manually in their existing `if (!result.success) ... else toast.success(...)` branch instead.

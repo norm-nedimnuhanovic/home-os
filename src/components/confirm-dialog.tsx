@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -19,6 +20,7 @@ export function ConfirmDialog({
   description,
   confirmLabel = "Confirm",
   variant = "destructive",
+  successMessage,
   onConfirm,
 }: {
   open: boolean;
@@ -27,6 +29,10 @@ export function ConfirmDialog({
   description: string;
   confirmLabel?: string;
   variant?: "destructive" | "default";
+  // Omit for a caller whose onConfirm already navigates/ends the session
+  // (e.g. closeHousehold() + logout()) — a toast would either never render
+  // or land on an unrelated page.
+  successMessage?: string;
   onConfirm: () => Promise<unknown>;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -37,6 +43,7 @@ export function ConfirmDialog({
     startTransition(async () => {
       try {
         await onConfirm();
+        if (successMessage) toast.success(successMessage);
         onOpenChange(false);
       } catch (err) {
         // Keep the dialog open so the member can see why the guard rejected

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -63,33 +62,13 @@ export function QuickCaptureButton({
             </DialogTitle>
           </DialogHeader>
           {activeTarget === "tasks" && (
-            <TaskForm
-              members={members}
-              tags={tags}
-              onDone={() => {
-                setActiveTarget(null);
-                toast.success("Task created");
-              }}
-            />
+            <TaskForm members={members} tags={tags} onDone={() => setActiveTarget(null)} />
           )}
           {activeTarget === "notes" && (
-            <NoteForm
-              members={members}
-              tags={tags}
-              onDone={() => {
-                setActiveTarget(null);
-                toast.success("Note created");
-              }}
-            />
+            <NoteForm members={members} tags={tags} onDone={() => setActiveTarget(null)} />
           )}
           {activeTarget === "reminders" && (
-            <ReminderForm
-              members={members}
-              onDone={() => {
-                setActiveTarget(null);
-                toast.success("Reminder created");
-              }}
-            />
+            <ReminderForm members={members} onDone={() => setActiveTarget(null)} />
           )}
         </DialogContent>
       </Dialog>

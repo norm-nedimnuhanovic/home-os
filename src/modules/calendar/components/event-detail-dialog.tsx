@@ -1,20 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { EventForm } from "./event-form";
 import { deleteEvent } from "../actions/delete-event";
 import type { Event } from "@prisma/client";
@@ -33,7 +23,7 @@ export function EventDetailDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
     <Dialog
@@ -65,32 +55,22 @@ export function EventDetailDialog({
                 <Button variant="outline" onClick={() => setEditing(true)} className="w-full sm:w-auto">
                   Edit
                 </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" disabled={isPending} className="w-full sm:w-auto">
-                      Delete
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-lg">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete this event?</AlertDialogTitle>
-                      <AlertDialogDescription>This can&apos;t be undone.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() =>
-                          startTransition(async () => {
-                            await deleteEvent(event.id);
-                            onOpenChange(false);
-                          })
-                        }
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <Button variant="outline" className="w-full sm:w-auto" onClick={() => setDeleteOpen(true)}>
+                  Delete
+                </Button>
+
+                <ConfirmDialog
+                  open={deleteOpen}
+                  onOpenChange={setDeleteOpen}
+                  title="Delete this event?"
+                  description="This can't be undone."
+                  confirmLabel="Delete"
+                  successMessage="Event deleted"
+                  onConfirm={async () => {
+                    await deleteEvent(event.id);
+                    onOpenChange(false);
+                  }}
+                />
               </div>
             )}
           </div>

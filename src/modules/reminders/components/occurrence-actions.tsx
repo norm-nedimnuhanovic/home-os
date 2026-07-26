@@ -1,6 +1,5 @@
 "use client";
 
-import { useTransition } from "react";
 import { addHours, addDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 import { snoozeOccurrence } from "../actions/snooze-occurrence";
 import { dismissOccurrence } from "../actions/dismiss-occurrence";
 import { completeOccurrence } from "../actions/complete-occurrence";
@@ -20,7 +20,7 @@ const SNOOZE_PRESETS = [
 ];
 
 export function OccurrenceActions({ occurrenceId }: { occurrenceId: string }) {
-  const [isPending, startTransition] = useTransition();
+  const { isPending, run } = useActionFeedback();
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -34,11 +34,7 @@ export function OccurrenceActions({ occurrenceId }: { occurrenceId: string }) {
           {SNOOZE_PRESETS.map((preset) => (
             <DropdownMenuItem
               key={preset.label}
-              onClick={() =>
-                startTransition(async () => {
-                  await snoozeOccurrence(occurrenceId, preset.getDate());
-                })
-              }
+              onClick={() => run(() => snoozeOccurrence(occurrenceId, preset.getDate()), "Reminder snoozed")}
             >
               {preset.label}
             </DropdownMenuItem>
@@ -50,11 +46,7 @@ export function OccurrenceActions({ occurrenceId }: { occurrenceId: string }) {
         size="sm"
         disabled={isPending}
         className="w-full sm:w-auto"
-        onClick={() =>
-          startTransition(async () => {
-            await completeOccurrence(occurrenceId);
-          })
-        }
+        onClick={() => run(() => completeOccurrence(occurrenceId), "Reminder completed")}
       >
         Complete
       </Button>
@@ -63,11 +55,7 @@ export function OccurrenceActions({ occurrenceId }: { occurrenceId: string }) {
         size="sm"
         disabled={isPending}
         className="w-full sm:w-auto"
-        onClick={() =>
-          startTransition(async () => {
-            await dismissOccurrence(occurrenceId);
-          })
-        }
+        onClick={() => run(() => dismissOccurrence(occurrenceId), "Reminder dismissed")}
       >
         Dismiss
       </Button>

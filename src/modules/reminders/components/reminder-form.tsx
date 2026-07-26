@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -68,8 +69,10 @@ export function ReminderForm({
     try {
       if (reminder) {
         await updateReminder(reminder.id, values);
+        toast.success("Reminder updated");
       } else {
         await createManualReminder(values);
+        toast.success("Reminder created");
       }
       onDone();
     } catch (err) {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 import { updateNotificationPreference } from "@/lib/notifications/actions/update-preferences";
 
 type Category = {
@@ -16,7 +17,7 @@ type Field = "emailEnabled" | "inAppEnabled" | "digestEnabled";
 
 export function NotificationPreferencesForm({ categories }: { categories: Category[] }) {
   const [rows, setRows] = useState(categories);
-  const [, startTransition] = useTransition();
+  const { run } = useActionFeedback();
 
   function toggle(categoryKey: string, field: Field, value: boolean) {
     const next = rows.map((row) => (row.categoryKey === categoryKey ? { ...row, [field]: value } : row));
@@ -24,14 +25,17 @@ export function NotificationPreferencesForm({ categories }: { categories: Catego
 
     const updated = next.find((row) => row.categoryKey === categoryKey);
     if (!updated) return;
-    startTransition(() => {
+    // Silent on success — this is a grid of switches, a toast on every
+    // single flip would be noise. Wrapped in run() purely so a failure
+    // (previously swallowed entirely, no try/catch at all) now surfaces.
+    run(() =>
       updateNotificationPreference({
         categoryKey: updated.categoryKey,
         emailEnabled: updated.emailEnabled,
         inAppEnabled: updated.inAppEnabled,
         digestEnabled: updated.digestEnabled,
-      });
-    });
+      }),
+    );
   }
 
   if (rows.length === 0) {

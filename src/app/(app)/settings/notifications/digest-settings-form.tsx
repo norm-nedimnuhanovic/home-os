@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -39,6 +40,7 @@ export function DigestSettingsForm({ digestSubscription }: { digestSubscription:
   async function onSubmit(values: DigestFormInput) {
     try {
       await updateDigestSubscription(values);
+      toast.success("Digest settings saved");
     } catch (err) {
       form.setError("root", { message: err instanceof Error ? err.message : "Something went wrong." });
     }

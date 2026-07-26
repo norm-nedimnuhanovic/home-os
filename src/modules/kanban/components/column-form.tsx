@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,6 +26,7 @@ export function ColumnForm({ boardId, onDone }: { boardId: string; onDone: () =>
   async function onSubmit(values: CreateColumnFormInput) {
     try {
       await createColumn(boardId, values);
+      toast.success("Column created");
       onDone();
     } catch (err) {
       form.setError("root", {

@@ -59,6 +59,7 @@ export function TransactionRowActions({
         title="Void transaction"
         description={`"${transaction.title}" will be marked void and excluded from summaries and budgets. This cannot be undone.`}
         confirmLabel="Void"
+        successMessage="Transaction voided"
         onConfirm={() => voidTransaction(transaction.id)}
       />
     </div>
