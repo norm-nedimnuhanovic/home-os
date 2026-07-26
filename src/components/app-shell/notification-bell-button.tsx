@@ -25,7 +25,7 @@ export function NotificationBellButton({ items }: { items: Notification[] }) {
           <Bell className="h-4 w-4" />
           Notifications
           {unreadCount > 0 && (
-            <span className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-destructive px-1 text-xs text-destructive-foreground sm:ml-1">
+            <span className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-destructive px-1 text-xs text-white sm:ml-1">
               {unreadCount}
             </span>
           )}
